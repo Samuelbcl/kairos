@@ -6,12 +6,21 @@
 
 ## Stack (imposée — ne pas dévier sans justification d'une ligne)
 
-- **Next.js 15** (App Router, Server Components par défaut) + **TypeScript strict**
-- **Tailwind CSS** + **shadcn/ui** (composants) + **lucide-react** (icônes)
+- **Next.js 16** (App Router, Server Components par défaut, Turbopack) + **TypeScript strict**
+  - Écart assumé vs le brief initial (Next 15) : `create-next-app` installe désormais la 16, même
+    architecture App Router / Server Actions. Trois conséquences à connaître par cœur :
+    **le middleware s'appelle `src/proxy.ts`** (fonction exportée `proxy`, runtime Node),
+    `cookies()` / `headers()` / `params` / `searchParams` sont **async uniquement**,
+    et `next lint` n'existe plus (`npm run lint` appelle `eslint` directement).
+  - Les docs de la version installée sont dans `node_modules/next/dist/docs/` : les lire avant
+    d'écrire du code App Router plutôt que de se fier à la mémoire.
+- **Tailwind CSS v4** (tokens en `@theme` dans `globals.css`, pas de `tailwind.config.ts`)
+  + **shadcn/ui** (style `base-nova`, bâti sur **Base UI** — prop `render`, pas `asChild`)
+  + **lucide-react** (icônes)
 - **Supabase** : Postgres + Auth + Storage + **RLS**, région **eu-central-1**
 - **@supabase/ssr** pour l'auth côté serveur (cookies), pas l'ancien auth-helpers
 - **React Query** (@tanstack/react-query) pour le cache client ; Server Actions pour les mutations
-- **zod** + **react-hook-form** pour les formulaires et la validation
+- **zod v4** + **react-hook-form** pour les formulaires et la validation (`z.email()`, pas `z.string().email()`)
 - **date-fns** (fuseau **Europe/Brussels**), **sonner** (toasts), **cmdk** (barre ⌘K), **@dnd-kit** (drag & drop kanban)
 - **Resend** (emails transactionnels)
 - **Vercel** (hébergement + Cron Jobs pour les rappels/refresh tokens)
@@ -49,7 +58,9 @@ kairos/
 │   │   │   └── cron/
 │   │   │       ├── reminders/route.ts            # Vercel Cron : rappels
 │   │   │       └── refresh-tokens/route.ts       # Vercel Cron : refresh OAuth
+│   │   ├── setup/page.tsx             # écran d'aide si Supabase pas configuré
 │   │   └── globals.css
+│   ├── proxy.ts                       # ex-middleware.ts (Next 16) : session + garde auth
 │   ├── components/
 │   │   ├── ui/                        # shadcn
 │   │   ├── kanban/                    # Board, Column, DealCard
@@ -96,7 +107,9 @@ kairos/
 ```bash
 npm run dev            # dev local
 npm run build          # build prod
-npm run lint           # eslint
+npm run lint           # eslint (next lint n'existe plus en Next 16)
+npm run typecheck      # tsc --noEmit
+npx next typegen       # régénère PageProps/LayoutProps/RouteContext
 npx supabase db push   # applique les migrations (ou coller dans SQL Editor)
 npx supabase gen types typescript --linked > src/types/db.ts   # types DB
 vercel                 # déploiement

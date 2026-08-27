@@ -1,26 +1,207 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* Le mode sombre s'active par la classe `.dark` (next-themes) ou par
+   [data-theme="dark"] posé par le ThemeProvider d'espace. */
+@custom-variant dark (&:is(.dark *, [data-theme="dark"] *));
 
 @theme inline {
+  /* Neutres */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-surface: var(--surface);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  /* Couleur de marque — personnalisable par espace (workspaces.branding.accent).
+     Elle passe par --primary pour que tous les composants shadcn la suivent.
+     --brand-soft est la version teintée pour les fonds discrets. */
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-brand-soft: var(--brand-soft);
+
+  /* Survols neutres (menus, lignes de tableau) — volontairement pas la marque */
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  /* Sémantique */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-destructive: var(--danger);
+  --color-info: var(--info);
+
+  /* Sidebar (shadcn) */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Graphiques (dashboard) */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Typo */
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-sans);
+
+  /* Formes — --radius est personnalisable par espace */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+
+  /* Mouvement : bref et fonctionnel (120-200 ms), jamais decoratif */
+  --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  /* Neutres */
+  --background: #ffffff;
+  --surface: #fafafa;
+  --card: #ffffff;
+  --card-foreground: #18181b;
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+  --foreground: #18181b;
+  --border: #e7e7ea;
+  --input: #e7e7ea;
+  --muted: #f4f4f5;
+  --muted-foreground: #6b7280;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+
+  /* Marque (defaut indigo) */
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --brand-soft: #eef0ff;
+  --ring: #4f46e5;
+
+  /* Semantique */
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --info: #2563eb;
+
+  /* Graphiques */
+  --chart-1: #4f46e5;
+  --chart-2: #f59e0b;
+  --chart-3: #22c55e;
+  --chart-4: #ef4444;
+  --chart-5: #8b5cf6;
+
+  /* Sidebar */
+  --sidebar: #fafafa;
+  --sidebar-foreground: #18181b;
+  --sidebar-primary: #4f46e5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef0ff;
+  --sidebar-accent-foreground: #18181b;
+  --sidebar-border: #e7e7ea;
+  --sidebar-ring: #4f46e5;
+
+  /* Forme & mouvement */
+  --radius: 0.75rem;
+  --shadow-soft: 0 1px 2px rgb(16 24 40 / 0.04), 0 4px 12px rgb(16 24 40 / 0.06);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur: 160ms;
+}
+
+.dark,
+[data-theme="dark"] {
+  --background: #0b0b0f;
+  --surface: #111114;
+  --card: #16161b;
+  --card-foreground: #f4f4f5;
+  --popover: #16161b;
+  --popover-foreground: #f4f4f5;
+  --foreground: #f4f4f5;
+  --border: #26262c;
+  --input: #26262c;
+  --muted: #1c1c22;
+  --muted-foreground: #9a9aa5;
+  --secondary: #1c1c22;
+  --secondary-foreground: #f4f4f5;
+  --accent: #1c1c22;
+  --accent-foreground: #f4f4f5;
+
+  --primary: #6c73ff;
+  --primary-foreground: #0b0b0f;
+  --brand-soft: #1b1b44;
+  --ring: #6c73ff;
+
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #f87171;
+  --info: #60a5fa;
+
+  --sidebar: #111114;
+  --sidebar-foreground: #f4f4f5;
+  --sidebar-primary: #6c73ff;
+  --sidebar-primary-foreground: #0b0b0f;
+  --sidebar-accent: #1b1b44;
+  --sidebar-accent-foreground: #f4f4f5;
+  --sidebar-border: #26262c;
+  --sidebar-ring: #6c73ff;
+
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 12px rgb(0 0 0 / 0.35);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply font-sans;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  /* Focus visible au clavier partout (exigence d'accessibilite) */
+  :focus-visible {
+    @apply outline-ring outline-2 outline-offset-2;
+  }
+
+  /* Montants et dates alignes en colonne */
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
