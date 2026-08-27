@@ -71,3 +71,42 @@ export function fullName(
 ) {
   return [first, last].filter(Boolean).join(" ").trim();
 }
+
+/**
+ * Comparaisons temporelles isolées ici : appeler Date.now() dans le corps d'un
+ * composant est signalé comme impur par les règles du compilateur React.
+ */
+export function isOverdue(date: string | Date): boolean {
+  return new Date(date).getTime() < Date.now();
+}
+
+export function isStale(date: string | Date | null, days: number): boolean {
+  if (!date) return false;
+  return Date.now() - new Date(date).getTime() > days * 86_400_000;
+}
+
+/** Compte les échéances déjà passées dans une liste. */
+export function countOverdue(items: { due_at: string }[]): number {
+  const now = Date.now();
+  return items.reduce(
+    (total, item) => total + (new Date(item.due_at).getTime() < now ? 1 : 0),
+    0,
+  );
+}
+
+/** Regroupe des relances par rattachement, en ne comptant que les échues. */
+export function groupOverdueBy<T extends { due_at: string }>(
+  items: T[],
+  key: (item: T) => string | null,
+): Map<string, number> {
+  const now = Date.now();
+  const map = new Map<string, number>();
+  for (const item of items) {
+    const id = key(item);
+    if (!id) continue;
+    if (new Date(item.due_at).getTime() < now) {
+      map.set(id, (map.get(id) ?? 0) + 1);
+    }
+  }
+  return map;
+}
