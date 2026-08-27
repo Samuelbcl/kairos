@@ -239,12 +239,30 @@ try {
   process.exitCode = 1;
 } finally {
   // --- Nettoyage ------------------------------------------------------------
+  // Attention : supprimer un compte ne supprime PAS son espace. workspaces.created_by
+  // est en `on delete set null`, donc l'espace survivrait sans aucun membre.
+  // On supprime donc les espaces explicitement, avant les comptes.
   console.log("\n6. Nettoyage");
+
+  const workspaceIds = accounts.map((a) => a.workspaceId).filter(Boolean);
+  if (workspaceIds.length) {
+    const { error } = await admin.from("workspaces").delete().in("id", workspaceIds);
+    if (error) console.error(`  suppression des espaces impossible : ${error.message}`);
+  }
+
   for (const userId of created) {
     const { error } = await admin.auth.admin.deleteUser(userId);
     if (error) console.error(`  suppression de ${userId} impossible : ${error.message}`);
   }
-  console.log(`  ${created.length} compte(s) de test supprimé(s), espaces compris (cascade).`);
+
+  const { data: orphans } = await admin
+    .from("workspaces")
+    .select("id, name")
+    .in("id", workspaceIds.length ? workspaceIds : [crypto.randomUUID()]);
+  console.log(
+    `  ${created.length} compte(s) et ${workspaceIds.length} espace(s) supprimés` +
+      (orphans?.length ? ` — ATTENTION : ${orphans.length} espace(s) orphelin(s) restant(s)` : "."),
+  );
 
   const failed = results.filter((r) => !r.passed);
   console.log(

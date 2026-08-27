@@ -41,16 +41,10 @@ export default async function MembersPage() {
     console.error("[members] lecture impossible", error.message);
   }
 
-  type Row = {
-    user_id: string;
-    role: Member["role"];
-    profiles: { full_name: string | null };
-  };
-
-  const members: Member[] = ((data ?? []) as unknown as Row[]).map((row) => ({
+  const members: Member[] = (data ?? []).map((row) => ({
     userId: row.user_id,
     role: row.role,
-    fullName: row.profiles?.full_name ?? null,
+    fullName: row.profiles.full_name,
   }));
 
   const canManage = workspace.role !== "member";

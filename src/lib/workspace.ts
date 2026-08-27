@@ -44,23 +44,13 @@ export const getWorkspaces = cache(async (): Promise<Workspace[]> => {
     return [];
   }
 
-  type Row = {
-    role: Workspace["role"];
-    workspaces: {
-      id: string;
-      name: string;
-      slug: string;
-      branding: Branding | null;
-      timezone: string | null;
-    };
-  };
-
-  return (data as unknown as Row[]).map((row) => ({
+  return data.map((row) => ({
     id: row.workspaces.id,
     name: row.workspaces.name,
     slug: row.workspaces.slug,
-    branding: row.workspaces.branding ?? {},
-    timezone: row.workspaces.timezone ?? "Europe/Brussels",
+    // branding est un jsonb : la forme n'est pas garantie par le type généré.
+    branding: (row.workspaces.branding ?? {}) as Branding,
+    timezone: row.workspaces.timezone,
     role: row.role,
   }));
 });
