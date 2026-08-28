@@ -69,6 +69,13 @@ export default async function CompanyPage(props: PageProps<"/companies/[id]">) {
         .order("due_at"),
     ]);
 
+  const { data: customFields } = await supabase
+    .from("custom_fields")
+    .select("id, entity, key, label, type, options")
+    .eq("workspace_id", workspace.id)
+    .eq("entity", "company")
+    .order("position");
+
   const entries: TimelineEntry[] = (activities ?? []).map((a) => ({
     id: a.id,
     type: a.type,
@@ -124,7 +131,17 @@ export default async function CompanyPage(props: PageProps<"/companies/[id]">) {
               <CardTitle className="text-sm">Informations</CardTitle>
             </CardHeader>
             <CardContent>
-              <CompanyFields company={company} />
+              <CompanyFields
+                company={company}
+                customFields={(customFields ?? []).map((f) => ({
+                  id: f.id,
+                  entity: f.entity,
+                  key: f.key,
+                  label: f.label,
+                  type: f.type,
+                  options: Array.isArray(f.options) ? (f.options as string[]) : null,
+                }))}
+              />
             </CardContent>
           </Card>
 

@@ -3,33 +3,15 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/db";
 import { hmacSignature } from "@/lib/crypto";
+import type { WebhookEvent } from "./webhook-events";
 
 type Client = SupabaseClient<Database>;
 
-/** Événements que Kairos peut pousser vers l'extérieur. */
-export const WEBHOOK_EVENTS = [
-  "company.created",
-  "contact.created",
-  "deal.created",
-  "deal.stage_changed",
-  "deal.won",
-  "deal.lost",
-  "task.created",
-  "task.completed",
-] as const;
-
-export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];
-
-export const WEBHOOK_EVENT_LABELS: Record<WebhookEvent, string> = {
-  "company.created": "Entreprise créée",
-  "contact.created": "Contact créé",
-  "deal.created": "Opportunité créée",
-  "deal.stage_changed": "Opportunité changée d'étape",
-  "deal.won": "Opportunité gagnée",
-  "deal.lost": "Opportunité perdue",
-  "task.created": "Relance créée",
-  "task.completed": "Relance terminée",
-};
+export {
+  WEBHOOK_EVENTS,
+  WEBHOOK_EVENT_LABELS,
+  type WebhookEvent,
+} from "./webhook-events";
 
 /**
  * Poste l'événement vers tous les webhooks abonnés de l'espace.

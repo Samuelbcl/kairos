@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { toast } from "sonner";
 import { InlineEdit } from "./inline-edit";
+import { CustomFields } from "./custom-fields";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -13,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { updateContact } from "@/server/actions/contacts";
 import type { Database } from "@/types/db";
+import type { CustomField } from "@/components/settings/custom-fields-panel";
 
 type Contact = Database["public"]["Tables"]["contacts"]["Row"];
 
@@ -21,14 +23,20 @@ const NO_COMPANY = "__none__";
 export function ContactFields({
   contact,
   companies,
+  customFields = [],
 }: {
   contact: Contact;
   companies: { id: string; name: string }[];
+  customFields?: CustomField[];
 }) {
   const [pending, startTransition] = useTransition();
 
   async function save(field: string, value: string) {
     return updateContact({ id: contact.id, [field]: value });
+  }
+
+  async function saveCustom(custom: Record<string, string | number | boolean | null>) {
+    return updateContact({ id: contact.id, custom });
   }
 
   function changeCompany(value: string) {
@@ -101,6 +109,12 @@ export function ContactFields({
         value={contact.tags.join(", ")}
         onSave={save}
         placeholder="Séparés par une virgule"
+      />
+
+      <CustomFields
+        fields={customFields}
+        values={(contact.custom ?? {}) as Record<string, string | number | boolean | null>}
+        onSave={saveCustom}
       />
     </div>
   );

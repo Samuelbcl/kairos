@@ -22,7 +22,7 @@ import {
   WEBHOOK_EVENTS,
   WEBHOOK_EVENT_LABELS,
   type WebhookEvent,
-} from "@/lib/webhooks";
+} from "@/lib/webhook-events";
 
 type Hook = {
   id: string;

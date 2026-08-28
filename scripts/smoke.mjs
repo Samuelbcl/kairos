@@ -189,6 +189,7 @@ try {
     ["/settings/workspace", "Réglages"],
     ["/settings/members", "Membres"],
     ["/settings/integrations", "Intégrations"],
+    ["/settings/api", "Clés API"],
   ];
 
   for (const [path, marker] of pages) {

@@ -77,8 +77,11 @@ export const config = {
   matcher: [
     /*
      * Tout sauf : fichiers statiques, images optimisées, favicon, assets publics,
-     * et les routes API système (cron, webhooks) qui ont leur propre garde.
+     * et les routes API qui ont leur propre authentification —
+     * /api/v1 par clé API, /api/cron par CRON_SECRET, /api/webhooks par signature.
+     * Les y soumettre à la garde de session les casserait : un appel machine
+     * n'a pas de cookie, il serait redirigé vers /login.
      */
-    "/((?!_next/static|_next/image|favicon.ico|api/cron|api/webhooks|.*\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/v1|api/cron|api/webhooks|.*\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

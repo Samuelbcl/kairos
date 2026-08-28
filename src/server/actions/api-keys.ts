@@ -8,7 +8,7 @@ import { requireWorkspace } from "@/lib/workspace";
 import { generateApiKey, hashApiKey } from "@/lib/crypto";
 import { firstIssue } from "@/lib/validators/common";
 import { fail, ok, pgError, type ActionResult } from "@/server/actions/types";
-import { WEBHOOK_EVENTS } from "@/lib/webhooks";
+import { WEBHOOK_EVENTS } from "@/lib/webhook-events";
 
 // --- Clés API ---------------------------------------------------------------
 

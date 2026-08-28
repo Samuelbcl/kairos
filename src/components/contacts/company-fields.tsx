@@ -1,15 +1,27 @@
 "use client";
 
 import { InlineEdit } from "./inline-edit";
+import { CustomFields } from "./custom-fields";
 import { updateCompany } from "@/server/actions/companies";
 import type { Database } from "@/types/db";
+import type { CustomField } from "@/components/settings/custom-fields-panel";
 
 type Company = Database["public"]["Tables"]["companies"]["Row"];
 
 /** Bloc d'informations d'une entreprise, chaque ligne éditable au clic. */
-export function CompanyFields({ company }: { company: Company }) {
+export function CompanyFields({
+  company,
+  customFields = [],
+}: {
+  company: Company;
+  customFields?: CustomField[];
+}) {
   async function save(field: string, value: string) {
     return updateCompany({ id: company.id, [field]: value });
+  }
+
+  async function saveCustom(custom: Record<string, string | number | boolean | null>) {
+    return updateCompany({ id: company.id, custom });
   }
 
   return (
@@ -68,6 +80,12 @@ export function CompanyFields({ company }: { company: Company }) {
         placeholder="Séparés par une virgule"
       />
       <InlineEdit label="Source" field="source" value={company.source} onSave={save} />
+
+      <CustomFields
+        fields={customFields}
+        values={(company.custom ?? {}) as Record<string, string | number | boolean | null>}
+        onSave={saveCustom}
+      />
     </div>
   );
 }

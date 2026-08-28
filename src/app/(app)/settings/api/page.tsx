@@ -5,7 +5,7 @@ import { ApiReference } from "@/components/settings/api-reference";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentWorkspace } from "@/lib/workspace";
 import { env } from "@/lib/env";
-import type { WebhookEvent } from "@/lib/webhooks";
+import type { WebhookEvent } from "@/lib/webhook-events";
 
 export const metadata = { title: "API & webhooks" };
 

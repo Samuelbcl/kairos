@@ -6,7 +6,51 @@ Ce dépôt est un **produit white-label**. Tu l'utilises d'abord pour Biancola S
 
 ---
 
+## État
+
+Les cinq phases de `ROADMAP.md` sont livrées : fondations, auth multi-tenant,
+cœur CRM, relances et agenda, connectivité, personnalisation.
+
+## Démarrage
+
+> Prérequis : Node.js ≥ 20, un projet Supabase en `eu-central-1`.
+
+```bash
+npm install
+cp .env.example .env.local     # puis remplis les valeurs
+npm run db:sql supabase/migrations/0001_init.sql
+npm run db:types
+npm run dev                    # http://localhost:3000
+```
+
+Sans Supabase configuré, l'app affiche `/setup` avec la marche à suivre.
+
+## Commandes
+
+| Commande | Rôle |
+|---|---|
+| `npm run dev` | serveur de développement |
+| `npm run build` | build de production |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run lint` | eslint |
+| `npm run db:sql <fichier>` | exécute un fichier SQL sur la base distante |
+| `npm run db:types` | régénère `src/types/db.ts` |
+| `npm run db:state` | inventaire du schéma |
+| `npm run test:rls` | étanchéité entre deux espaces (21 vérifications) |
+| `npm run test:smoke` | parcourt toutes les pages avec une vraie session (16) |
+| `npm run test:api` | API REST, cloisonnement et routes cron (20) |
+
+Les trois scripts de test créent des comptes jetables et les suppriment ensuite,
+y compris en cas d'échec.
+
+## Variables d'environnement
+
+Voir `.env.example`. En production, tout sauf `SUPABASE_DB_PASSWORD` et
+`SUPABASE_ACCESS_TOKEN` (qui ne servent qu'aux scripts locaux). `NEXT_PUBLIC_APP_URL`
+doit pointer vers l'URL de production : elle construit les URL de callback OAuth.
+
 ## Ce que contient ce dossier
+
 
 | Fichier | Rôle |
 |---|---|
