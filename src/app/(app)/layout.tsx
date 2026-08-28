@@ -37,7 +37,9 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         <Sidebar workspaces={options} currentId={workspace?.id ?? ""} />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar brandName={brandName} email={user.email ?? ""} name={name} />
-          <main className="flex-1 overflow-y-auto bg-surface p-4 md:p-6">
+          {/* Pas d'overflow ici : un enfant flex a min-height:auto, donc il
+              grandirait au lieu de defiler. La page defile, la sidebar colle. */}
+          <main className="flex-1 bg-surface p-4 md:p-6">
             {children}
           </main>
         </div>

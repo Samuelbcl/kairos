@@ -23,7 +23,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { guessMapping, parseCsv, type ParsedCsv } from "@/lib/csv";
+import { guessMapping } from "@/lib/csv";
+import {
+  isLegacyExcel,
+  isSupportedFile,
+  parseSpreadsheet,
+  type ParsedSheet,
+} from "@/lib/spreadsheet";
 import { importCompanies } from "@/server/actions/import";
 import { IMPORT_FIELDS, type ImportReport } from "@/lib/import-fields";
 
@@ -31,11 +37,12 @@ const IGNORE = "__ignore__";
 const MAX_ROWS = 5000;
 
 export function CsvImport({ stages }: { stages: { id: string; name: string }[] }) {
-  const [parsed, setParsed] = useState<ParsedCsv | null>(null);
+  const [parsed, setParsed] = useState<ParsedSheet | null>(null);
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [createDeals, setCreateDeals] = useState(false);
   const [stageId, setStageId] = useState(stages[0]?.id ?? "");
   const [report, setReport] = useState<ImportReport | null>(null);
+  const [reading, setReading] = useState(false);
   const [pending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -43,16 +50,40 @@ export function CsvImport({ stages }: { stages: { id: string; name: string }[] }
   async function onFile(file: File) {
     setReport(null);
 
-    if (!/\.csv$/i.test(file.name) && file.type !== "text/csv") {
-      toast.error("Ce fichier n'est pas un CSV. Exporte ton tableur au format CSV.");
+    if (isLegacyExcel(file)) {
+      toast.error("Format .xls trop ancien", {
+        description:
+          "Ouvre le fichier dans Excel et enregistre-le en .xlsx, puis réessaie.",
+      });
       return;
     }
 
-    const text = await file.text();
-    const result = parseCsv(text);
+    if (!isSupportedFile(file)) {
+      toast.error("Format non reconnu", {
+        description: "Kairos lit les fichiers .xlsx et .csv.",
+      });
+      return;
+    }
+
+    setReading(true);
+    let result: ParsedSheet;
+    try {
+      result = await parseSpreadsheet(file);
+    } catch (error) {
+      setReading(false);
+      console.error("[import] lecture du fichier impossible", error);
+      toast.error("Fichier illisible", {
+        description:
+          "Vérifie qu'il n'est pas protégé par mot de passe, puis réessaie.",
+      });
+      return;
+    }
+    setReading(false);
 
     if (result.rows.length === 0) {
-      toast.error("Le fichier ne contient aucune ligne exploitable.");
+      toast.error("Le fichier ne contient aucune ligne exploitable.", {
+        description: "La première ligne doit contenir les noms de colonnes.",
+      });
       return;
     }
     if (result.rows.length > MAX_ROWS) {
@@ -120,18 +151,25 @@ export function CsvImport({ stages }: { stages: { id: string; name: string }[] }
             }}
             className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border border-dashed px-6 py-10 text-center transition-colors duration-150 hover:border-primary hover:bg-brand-soft"
           >
-            <FileUp className="size-6 text-muted-foreground" strokeWidth={1.5} aria-hidden />
+            {reading ? (
+              <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
+            ) : (
+              <FileUp className="size-6 text-muted-foreground" strokeWidth={1.5} aria-hidden />
+            )}
             <span className="text-sm font-medium">
-              Dépose ton CSV ici, ou clique pour le choisir
+              {reading
+                ? "Lecture du fichier…"
+                : "Dépose ton fichier ici, ou clique pour le choisir"}
             </span>
             <span className="text-xs text-muted-foreground">
-              Séparateur virgule ou point-virgule, jusqu&apos;à {MAX_ROWS} lignes.
+              Excel (.xlsx) ou CSV, jusqu&apos;à {MAX_ROWS} lignes. La première
+              ligne doit contenir les noms de colonnes.
             </span>
             <input
               ref={inputRef}
               id="csv-file"
               type="file"
-              accept=".csv,text/csv"
+              accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
               className="sr-only"
               onChange={(e) => {
                 const file = e.target.files?.[0];
