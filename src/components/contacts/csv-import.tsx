@@ -24,7 +24,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { guessMapping, parseCsv, type ParsedCsv } from "@/lib/csv";
-import { importCompanies, IMPORT_FIELDS, type ImportReport } from "@/server/actions/import";
+import { importCompanies } from "@/server/actions/import";
+import { IMPORT_FIELDS, type ImportReport } from "@/lib/import-fields";
 
 const IGNORE = "__ignore__";
 const MAX_ROWS = 5000;

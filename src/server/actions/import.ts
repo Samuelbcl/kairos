@@ -5,22 +5,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireWorkspace } from "@/lib/workspace";
 import { fail, ok, pgError, type ActionResult } from "@/server/actions/types";
-
-/** Champs d'entreprise qu'une colonne CSV peut alimenter. */
-export const IMPORT_FIELDS = [
-  { key: "name", label: "Nom de l'entreprise", required: true },
-  { key: "email", label: "E-mail" },
-  { key: "phone", label: "Téléphone" },
-  { key: "website", label: "Site web" },
-  { key: "sector", label: "Secteur" },
-  { key: "address", label: "Adresse" },
-  { key: "city", label: "Ville" },
-  { key: "country", label: "Pays" },
-  { key: "size", label: "Taille" },
-  { key: "tags", label: "Tags (séparés par une virgule)" },
-] as const;
-
-export type ImportField = (typeof IMPORT_FIELDS)[number]["key"];
+import type { ImportReport } from "@/lib/import-fields";
 
 const rowSchema = z.object({
   name: z.string().trim().min(1),
@@ -42,13 +27,6 @@ const payloadSchema = z.object({
   /** Étape du pipeline où créer une opportunité par ligne (facultatif). */
   createDealsInStage: z.string().optional(),
 });
-
-export type ImportReport = {
-  created: number;
-  skipped: number;
-  duplicates: string[];
-  errors: { line: number; reason: string }[];
-};
 
 /**
  * Importe des entreprises depuis un CSV déjà découpé côté client.

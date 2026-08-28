@@ -7,7 +7,10 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { disconnectIntegration, resyncCalendar } from "@/server/actions/integrations";
+import {
+  disconnectIntegration,
+  resyncCalendar,
+} from "@/server/actions/integrations";
 import { formatDate } from "@/lib/format";
 
 type Props = {
@@ -67,9 +70,17 @@ export function IntegrationCard({
         <div className="flex items-start gap-3">
           <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-brand-soft">
             {connected ? (
-              <CalendarCheck2 className="size-4 text-primary" strokeWidth={1.75} aria-hidden />
+              <CalendarCheck2
+                className="size-4 text-primary"
+                strokeWidth={1.75}
+                aria-hidden
+              />
             ) : (
-              <Plug className="size-4 text-muted-foreground" strokeWidth={1.75} aria-hidden />
+              <Plug
+                className="size-4 text-muted-foreground"
+                strokeWidth={1.75}
+                aria-hidden
+              />
             )}
           </span>
           <div>
@@ -97,22 +108,41 @@ export function IntegrationCard({
               {connectedAt ? ` · depuis le ${formatDate(connectedAt)}` : null}
             </p>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={resync} disabled={pending}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resync}
+                disabled={pending}
+              >
                 {pending ? (
                   <Loader2 className="size-3.5 animate-spin" aria-hidden />
                 ) : (
-                  <RefreshCw className="size-3.5" strokeWidth={1.75} aria-hidden />
+                  <RefreshCw
+                    className="size-3.5"
+                    strokeWidth={1.75}
+                    aria-hidden
+                  />
                 )}
                 Envoyer les relances en attente
               </Button>
-              <Button variant="ghost" size="sm" onClick={disconnect} disabled={pending}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={disconnect}
+                disabled={pending}
+              >
                 <Unplug className="size-3.5" strokeWidth={1.75} aria-hidden />
                 Déconnecter
               </Button>
             </div>
           </>
         ) : configured ? (
-          <Button size="sm" className="w-fit" render={<a href={`/api/integrations/${provider}`} />}>
+          <Button
+            size="sm"
+            className="w-fit"
+            nativeButton={false}
+            render={<a href={`/api/integrations/${provider}`} />}
+          >
             <Plug className="size-3.5" strokeWidth={1.75} aria-hidden />
             Connecter {name}
           </Button>

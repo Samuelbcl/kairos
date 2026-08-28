@@ -127,7 +127,12 @@ export default async function DashboardPage() {
           title="Ton espace est encore vide."
           description="Importe ton tableur pour démarrer, ou ajoute ta première entreprise avec ⌘K."
           action={
-            <Button render={<Link href="/contacts/import" />}>Importer un CSV</Button>
+            <Button
+              nativeButton={false}
+              render={<Link href="/contacts/import" />}
+            >
+              Importer un CSV
+            </Button>
           }
         />
       ) : (
@@ -207,7 +212,8 @@ export default async function DashboardPage() {
                   </ul>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    Rien encore. L&apos;activité apparaîtra ici au fil de tes échanges.
+                    Rien encore. L&apos;activité apparaîtra ici au fil de tes
+                    échanges.
                   </p>
                 )}
               </CardContent>
@@ -235,16 +241,28 @@ function StatCard({
   tone?: "danger";
 }) {
   const content = (
-    <Card className={href ? "transition-colors duration-150 hover:border-primary" : undefined}>
+    <Card
+      className={
+        href ? "transition-colors duration-150 hover:border-primary" : undefined
+      }
+    >
       <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
-        <Icon className="size-4 text-muted-foreground" strokeWidth={1.75} aria-hidden />
+        <CardTitle className="text-sm font-medium text-muted-foreground">
+          {label}
+        </CardTitle>
+        <Icon
+          className="size-4 text-muted-foreground"
+          strokeWidth={1.75}
+          aria-hidden
+        />
       </CardHeader>
       <CardContent>
         <p className="tabular text-3xl font-semibold">{value}</p>
         <p
           className={
-            tone === "danger" ? "mt-1 text-xs text-danger" : "mt-1 text-xs text-muted-foreground"
+            tone === "danger"
+              ? "mt-1 text-xs text-danger"
+              : "mt-1 text-xs text-muted-foreground"
           }
         >
           {hint}

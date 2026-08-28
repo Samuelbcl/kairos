@@ -113,7 +113,8 @@ export function TaskList({
     hide(task.id);
     startTransition(async () => {
       const result = await snoozeTask({ id: task.id, days });
-      if (result.ok) toast.success(`Reportée de ${days} jour${days > 1 ? "s" : ""}`);
+      if (result.ok)
+        toast.success(`Reportée de ${days} jour${days > 1 ? "s" : ""}`);
       else {
         restore(task.id);
         toast.error(result.error);
@@ -137,10 +138,17 @@ export function TaskList({
     <section>
       <h2 className="mb-3 flex items-center gap-2 text-sm font-medium">
         <span className={cn(tone === "danger" && "text-danger")}>{title}</span>
-        <span className="tabular text-xs font-normal text-muted-foreground">{count}</span>
+        <span className="tabular text-xs font-normal text-muted-foreground">
+          {count}
+        </span>
       </h2>
 
-      <ul className={cn("flex flex-col rounded-lg border bg-card", muted && "opacity-90")}>
+      <ul
+        className={cn(
+          "flex flex-col rounded-lg border bg-card",
+          muted && "opacity-90",
+        )}
+      >
         {visible.map((task) => {
           const Icon = KIND_ICONS[task.kind];
           const late = isOverdue(task.dueAt);
@@ -171,7 +179,11 @@ export function TaskList({
                 </p>
 
                 <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
-                  <span className={cn(late ? "text-danger" : "text-muted-foreground")}>
+                  <span
+                    className={cn(
+                      late ? "text-danger" : "text-muted-foreground",
+                    )}
+                  >
                     {formatDue(task.dueAt)}
                   </span>
 
@@ -180,7 +192,11 @@ export function TaskList({
                       href={`/companies/${task.company.id}`}
                       className="inline-flex items-center gap-1 text-muted-foreground hover:underline"
                     >
-                      <Building2 className="size-3" strokeWidth={1.75} aria-hidden />
+                      <Building2
+                        className="size-3"
+                        strokeWidth={1.75}
+                        aria-hidden
+                      />
                       {task.company.name}
                     </Link>
                   ) : null}
@@ -197,7 +213,11 @@ export function TaskList({
 
                   {task.dealTitle ? (
                     <span className="inline-flex items-center gap-1 text-muted-foreground">
-                      <Target className="size-3" strokeWidth={1.75} aria-hidden />
+                      <Target
+                        className="size-3"
+                        strokeWidth={1.75}
+                        aria-hidden
+                      />
                       {task.dealTitle}
                     </span>
                   ) : null}
@@ -217,6 +237,7 @@ export function TaskList({
                   <Button
                     variant="outline"
                     size="xs"
+                    nativeButton={false}
                     render={<Link href={`/companies/${task.company.id}`} />}
                   >
                     Ouvrir
@@ -226,11 +247,22 @@ export function TaskList({
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     render={
-                      <Button variant="ghost" size="icon-xs" aria-label="Autres actions">
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        aria-label="Autres actions"
+                      >
                         {pending ? (
-                          <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                          <Loader2
+                            className="size-3.5 animate-spin"
+                            aria-hidden
+                          />
                         ) : (
-                          <MoreHorizontal className="size-3.5" strokeWidth={2} aria-hidden />
+                          <MoreHorizontal
+                            className="size-3.5"
+                            strokeWidth={2}
+                            aria-hidden
+                          />
                         )}
                       </Button>
                     }
@@ -241,13 +273,21 @@ export function TaskList({
                         key={option.days}
                         onClick={() => snooze(task, option.days)}
                       >
-                        <Clock className="size-4" strokeWidth={1.75} aria-hidden />
+                        <Clock
+                          className="size-4"
+                          strokeWidth={1.75}
+                          aria-hidden
+                        />
                         Reporter à {option.label.toLowerCase()}
                       </DropdownMenuItem>
                     ))}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => remove(task)}>
-                      <Trash2 className="size-4" strokeWidth={1.75} aria-hidden />
+                      <Trash2
+                        className="size-4"
+                        strokeWidth={1.75}
+                        aria-hidden
+                      />
                       Supprimer
                     </DropdownMenuItem>
                   </DropdownMenuContent>

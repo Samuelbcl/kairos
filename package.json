@@ -14,7 +14,8 @@
     "db:state": "node scripts/db-state.mjs",
     "test:rls": "node scripts/test-rls.mjs",
     "test:smoke": "node scripts/smoke.mjs",
-    "test:api": "node scripts/test-api.mjs"
+    "test:api": "node scripts/test-api.mjs",
+    "check:boundaries": "node scripts/check-boundaries.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

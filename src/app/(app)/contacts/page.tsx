@@ -76,7 +76,9 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
   if (tab === "companies") {
     let request = supabase
       .from("companies")
-      .select("id, name, email, sector, city, tags, updated_at, contacts(count)")
+      .select(
+        "id, name, email, sector, city, tags, updated_at, contacts(count)",
+      )
       .eq("workspace_id", workspace.id)
       .order("updated_at", { ascending: false })
       .limit(200);
@@ -89,12 +91,15 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
     if (tag) request = request.contains("tags", [tag]);
 
     const { data, error } = await request;
-    if (error) console.error("[contacts] lecture des entreprises", error.message);
+    if (error)
+      console.error("[contacts] lecture des entreprises", error.message);
     companies = data ?? [];
   } else {
     let request = supabase
       .from("contacts")
-      .select("id, first_name, last_name, email, role_title, tags, companies(id, name)")
+      .select(
+        "id, first_name, last_name, email, role_title, tags, companies(id, name)",
+      )
       .eq("workspace_id", workspace.id)
       .order("updated_at", { ascending: false })
       .limit(200);
@@ -120,7 +125,11 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
         description="Tes comptes et les personnes qui vont avec."
         action={
           <div className="flex gap-2">
-            <Button variant="outline" render={<Link href="/contacts/import" />}>
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={<Link href="/contacts/import" />}
+            >
               <Upload className="size-4" strokeWidth={1.75} aria-hidden />
               Importer un CSV
             </Button>
@@ -142,7 +151,11 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
         companies.length === 0 ? (
           <EmptyState
             icon={Building2}
-            title={isFiltered ? "Aucune entreprise ne correspond." : "Aucune entreprise pour l'instant."}
+            title={
+              isFiltered
+                ? "Aucune entreprise ne correspond."
+                : "Aucune entreprise pour l'instant."
+            }
             description={
               isFiltered
                 ? "Essaie un autre terme, ou retire le filtre de tag."
@@ -155,10 +168,16 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
               <TableHeader>
                 <TableRow>
                   <TableHead>Entreprise</TableHead>
-                  <TableHead className="hidden md:table-cell">Secteur</TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    Secteur
+                  </TableHead>
                   <TableHead className="hidden lg:table-cell">Ville</TableHead>
-                  <TableHead className="hidden sm:table-cell">Contacts</TableHead>
-                  <TableHead className="hidden xl:table-cell">Modifié</TableHead>
+                  <TableHead className="hidden sm:table-cell">
+                    Contacts
+                  </TableHead>
+                  <TableHead className="hidden xl:table-cell">
+                    Modifié
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -179,7 +198,11 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
                       {company.tags.length ? (
                         <span className="mt-1 flex flex-wrap gap-1">
                           {company.tags.map((t) => (
-                            <Badge key={t} variant="secondary" className="text-[10px]">
+                            <Badge
+                              key={t}
+                              variant="secondary"
+                              className="text-[10px]"
+                            >
                               {t}
                             </Badge>
                           ))}
@@ -207,7 +230,11 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
       ) : people.length === 0 ? (
         <EmptyState
           icon={User}
-          title={isFiltered ? "Aucun contact ne correspond." : "Aucun contact pour l'instant."}
+          title={
+            isFiltered
+              ? "Aucun contact ne correspond."
+              : "Aucun contact pour l'instant."
+          }
           description={
             isFiltered
               ? "Essaie un autre terme, ou retire le filtre de tag."
@@ -221,7 +248,9 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
               <TableRow>
                 <TableHead>Personne</TableHead>
                 <TableHead className="hidden md:table-cell">Fonction</TableHead>
-                <TableHead className="hidden sm:table-cell">Entreprise</TableHead>
+                <TableHead className="hidden sm:table-cell">
+                  Entreprise
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -232,7 +261,8 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
                       href={`/contacts/${person.id}`}
                       className="font-medium hover:underline"
                     >
-                      {fullName(person.first_name, person.last_name) || "Sans nom"}
+                      {fullName(person.first_name, person.last_name) ||
+                        "Sans nom"}
                     </Link>
                     {person.email ? (
                       <span className="block truncate text-xs text-muted-foreground">

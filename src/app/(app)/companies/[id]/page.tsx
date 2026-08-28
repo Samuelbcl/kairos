@@ -41,33 +41,37 @@ export default async function CompanyPage(props: PageProps<"/companies/[id]">) {
 
   if (error || !company) notFound();
 
-  const [{ data: contacts }, { data: deals }, { data: activities }, { data: tasks }] =
-    await Promise.all([
-      supabase
-        .from("contacts")
-        .select("id, first_name, last_name, email, role_title")
-        .eq("company_id", id)
-        .order("last_name"),
-      supabase
-        .from("deals")
-        .select("id, title, value, currency, status, stages(name, color)")
-        .eq("company_id", id)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("activities")
-        .select(
-          "id, type, content, created_at, profiles!activities_created_by_profiles_fkey(full_name)",
-        )
-        .eq("subject_type", "company")
-        .eq("subject_id", id)
-        .order("created_at", { ascending: false })
-        .limit(50),
-      supabase
-        .from("tasks")
-        .select("id, title, kind, due_at, done, priority, external_event_id")
-        .eq("company_id", id)
-        .order("due_at"),
-    ]);
+  const [
+    { data: contacts },
+    { data: deals },
+    { data: activities },
+    { data: tasks },
+  ] = await Promise.all([
+    supabase
+      .from("contacts")
+      .select("id, first_name, last_name, email, role_title")
+      .eq("company_id", id)
+      .order("last_name"),
+    supabase
+      .from("deals")
+      .select("id, title, value, currency, status, stages(name, color)")
+      .eq("company_id", id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("activities")
+      .select(
+        "id, type, content, created_at, profiles!activities_created_by_profiles_fkey(full_name)",
+      )
+      .eq("subject_type", "company")
+      .eq("subject_id", id)
+      .order("created_at", { ascending: false })
+      .limit(50),
+    supabase
+      .from("tasks")
+      .select("id, title, kind, due_at, done, priority, external_event_id")
+      .eq("company_id", id)
+      .order("due_at"),
+  ]);
 
   const { data: customFields } = await supabase
     .from("custom_fields")
@@ -99,7 +103,11 @@ export default async function CompanyPage(props: PageProps<"/companies/[id]">) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-brand-soft">
-            <Building2 className="size-5 text-primary" strokeWidth={1.75} aria-hidden />
+            <Building2
+              className="size-5 text-primary"
+              strokeWidth={1.75}
+              aria-hidden
+            />
           </span>
           <div className="min-w-0">
             <h1 className="truncate text-xl font-semibold tracking-tight">
@@ -139,7 +147,9 @@ export default async function CompanyPage(props: PageProps<"/companies/[id]">) {
                   key: f.key,
                   label: f.label,
                   type: f.type,
-                  options: Array.isArray(f.options) ? (f.options as string[]) : null,
+                  options: Array.isArray(f.options)
+                    ? (f.options as string[])
+                    : null,
                 }))}
               />
             </CardContent>
@@ -154,7 +164,10 @@ export default async function CompanyPage(props: PageProps<"/companies/[id]">) {
               {contacts?.length ? (
                 <ul className="flex flex-col divide-y">
                   {contacts.map((contact) => (
-                    <li key={contact.id} className="flex items-center gap-3 py-2 first:pt-0">
+                    <li
+                      key={contact.id}
+                      className="flex items-center gap-3 py-2 first:pt-0"
+                    >
                       <span className="grid size-8 shrink-0 place-items-center rounded-full bg-muted">
                         <User
                           className="size-4 text-muted-foreground"
@@ -167,11 +180,13 @@ export default async function CompanyPage(props: PageProps<"/companies/[id]">) {
                           href={`/contacts/${contact.id}`}
                           className="text-sm font-medium hover:underline"
                         >
-                          {fullName(contact.first_name, contact.last_name) || "Sans nom"}
+                          {fullName(contact.first_name, contact.last_name) ||
+                            "Sans nom"}
                         </Link>
                         <p className="truncate text-xs text-muted-foreground">
-                          {[contact.role_title, contact.email].filter(Boolean).join(" · ") ||
-                            "Aucun détail"}
+                          {[contact.role_title, contact.email]
+                            .filter(Boolean)
+                            .join(" · ") || "Aucun détail"}
                         </p>
                       </div>
                     </li>
@@ -179,7 +194,8 @@ export default async function CompanyPage(props: PageProps<"/companies/[id]">) {
                 </ul>
               ) : (
                 <p className="py-2 text-sm text-muted-foreground">
-                  Aucune personne rattachée. Ajoute ton interlocuteur quand tu l&apos;as.
+                  Aucune personne rattachée. Ajoute ton interlocuteur quand tu
+                  l&apos;as.
                 </p>
               )}
             </CardContent>
@@ -206,7 +222,13 @@ export default async function CompanyPage(props: PageProps<"/companies/[id]">) {
           <Card>
             <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
               <CardTitle className="text-sm">Opportunités</CardTitle>
-              <Button variant="ghost" size="icon-sm" render={<Link href="/pipeline" />} aria-label="Voir le pipeline">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                nativeButton={false}
+                render={<Link href="/pipeline" />}
+                aria-label="Voir le pipeline"
+              >
                 <Plus className="size-4" strokeWidth={2} aria-hidden />
               </Button>
             </CardHeader>
@@ -214,8 +236,13 @@ export default async function CompanyPage(props: PageProps<"/companies/[id]">) {
               {deals?.length ? (
                 <ul className="flex flex-col gap-2">
                   {deals.map((deal) => (
-                    <li key={deal.id} className="flex items-center justify-between gap-2">
-                      <span className="min-w-0 truncate text-sm">{deal.title}</span>
+                    <li
+                      key={deal.id}
+                      className="flex items-center justify-between gap-2"
+                    >
+                      <span className="min-w-0 truncate text-sm">
+                        {deal.title}
+                      </span>
                       <Badge
                         variant="secondary"
                         style={
