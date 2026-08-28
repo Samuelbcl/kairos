@@ -8,6 +8,7 @@ const tabs = [
   { href: "/settings/workspace", label: "Espace" },
   { href: "/settings/members", label: "Membres" },
   { href: "/settings/integrations", label: "Intégrations" },
+  { href: "/settings/api", label: "API & webhooks" },
 ];
 
 export function SettingsNav() {
