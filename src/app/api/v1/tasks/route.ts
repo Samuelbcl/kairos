@@ -1,6 +1,11 @@
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { authenticateApiKey, isErrorResponse, readPagination } from "@/lib/api-auth";
+import {
+  authenticateApiKey,
+  isErrorResponse,
+  json,
+  readPagination,
+} from "@/lib/api-auth";
 import { taskCreateSchema } from "@/lib/validators/task";
 import { firstIssue } from "@/lib/validators/common";
 import { dispatchWebhooks } from "@/lib/webhooks";
@@ -37,10 +42,10 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     console.error("[api/v1/tasks] lecture impossible", error.message);
-    return NextResponse.json({ error: "Lecture impossible." }, { status: 500 });
+    return json(auth, { error: "Lecture impossible." }, { status: 500 });
   }
 
-  return NextResponse.json({ data, count, limit, offset });
+  return json(auth, { data, count, limit, offset });
 }
 
 export async function POST(request: NextRequest) {
@@ -51,12 +56,12 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Corps JSON invalide." }, { status: 400 });
+    return json(auth, { error: "Corps JSON invalide." }, { status: 400 });
   }
 
   const parsed = taskCreateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: firstIssue(parsed.error) }, { status: 422 });
+    return json(auth, { error: firstIssue(parsed.error) }, { status: 422 });
   }
 
   const { remind_before_min, ...fields } = parsed.data;
@@ -75,7 +80,7 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     console.error("[api/v1/tasks] création impossible", error.message);
-    return NextResponse.json({ error: "Création impossible." }, { status: 500 });
+    return json(auth, { error: "Création impossible." }, { status: 500 });
   }
 
   // La synchronisation agenda dépend d'un utilisateur connecté : une relance
@@ -89,5 +94,5 @@ export async function POST(request: NextRequest) {
     dispatchWebhooks(admin, auth.workspaceId, "task.created", { task: data }),
   ]);
 
-  return NextResponse.json({ data }, { status: 201 });
+  return json(auth, { data }, { status: 201 });
 }

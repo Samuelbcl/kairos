@@ -3,7 +3,7 @@ import { Sidebar } from "@/components/shell/sidebar";
 import { Topbar } from "@/components/shell/topbar";
 import { ThemeProvider } from "@/components/shell/theme-provider";
 import { isSupabaseConfigured } from "@/lib/env";
-import { getUser } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import {
   displayName,
   getCurrentWorkspace,
@@ -16,9 +16,11 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   const user = await getUser();
   if (!user) redirect("/login");
 
-  const [workspace, workspaces] = await Promise.all([
+  const supabase = await createClient();
+  const [workspace, workspaces, { data: isPlatformAdmin }] = await Promise.all([
     getCurrentWorkspace(),
     getWorkspaces(),
+    supabase.rpc("is_platform_admin"),
   ]);
   const brandName = displayName(workspace);
   const options = workspaces.map((w) => ({
@@ -34,7 +36,11 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <ThemeProvider branding={workspace?.branding ?? {}}>
       <div className="flex min-h-full flex-1">
-        <Sidebar workspaces={options} currentId={workspace?.id ?? ""} />
+        <Sidebar
+          workspaces={options}
+          currentId={workspace?.id ?? ""}
+          isPlatformAdmin={isPlatformAdmin === true}
+        />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar brandName={brandName} email={user.email ?? ""} name={name} />
           {/* Pas d'overflow ici : un enfant flex a min-height:auto, donc il

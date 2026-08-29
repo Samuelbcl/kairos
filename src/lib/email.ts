@@ -85,21 +85,4 @@ function escapeHtml(value: string) {
     .replace(/"/g, "&quot;");
 }
 
-/** Interpole {{variable}} depuis un contexte plat. Variable inconnue → vide. */
-export function renderTemplate(
-  template: string,
-  context: Record<string, unknown>,
-): string {
-  return template.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, path: string) => {
-    const value = path
-      .split(".")
-      .reduce<unknown>(
-        (acc, key) =>
-          acc && typeof acc === "object"
-            ? (acc as Record<string, unknown>)[key]
-            : undefined,
-        context,
-      );
-    return value == null ? "" : String(value);
-  });
-}
+export { renderTemplate } from "./email-variables";

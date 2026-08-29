@@ -1,6 +1,7 @@
 import {
   Building2,
   CalendarClock,
+  CalendarDays,
   LayoutDashboard,
   Settings,
   Target,
@@ -19,6 +20,7 @@ export type NavItem = {
 export const mainNav: NavItem[] = [
   { href: "/", label: "Tableau de bord", icon: LayoutDashboard },
   { href: "/today", label: "Aujourd'hui", icon: CalendarClock },
+  { href: "/calendar", label: "Calendrier", icon: CalendarDays },
   { href: "/pipeline", label: "Pipeline", icon: Target },
   { href: "/contacts", label: "Contacts", icon: Building2, match: "/contacts" },
   { href: "/automations", label: "Automatisations", icon: Zap },

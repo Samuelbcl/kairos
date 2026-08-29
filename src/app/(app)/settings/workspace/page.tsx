@@ -73,6 +73,7 @@ export default async function WorkspaceSettingsPage() {
 
       <div className="flex flex-col gap-6">
         <BrandingPanel
+          workspaceId={workspace.id}
           workspaceName={workspace.name}
           timezone={workspace.timezone}
           branding={workspace.branding}

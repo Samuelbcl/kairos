@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 const tabs = [
   { href: "/settings/workspace", label: "Espace" },
   { href: "/settings/members", label: "Membres" },
+  { href: "/settings/emails", label: "E-mails" },
   { href: "/settings/integrations", label: "Intégrations" },
   { href: "/settings/api", label: "API & webhooks" },
 ];

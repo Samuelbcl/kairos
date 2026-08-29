@@ -1,6 +1,11 @@
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { authenticateApiKey, isErrorResponse, readPagination } from "@/lib/api-auth";
+import {
+  authenticateApiKey,
+  isErrorResponse,
+  json,
+  readPagination,
+} from "@/lib/api-auth";
 import { dealCreateSchema } from "@/lib/validators/deal";
 import { firstIssue } from "@/lib/validators/common";
 import { dispatchWebhooks } from "@/lib/webhooks";
@@ -24,6 +29,7 @@ export async function GET(request: NextRequest) {
     .from("deals")
     .select(FIELDS, { count: "exact" })
     .eq("workspace_id", auth.workspaceId)
+    .is("deleted_at", null)
     .order("updated_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
@@ -36,10 +42,10 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     console.error("[api/v1/deals] lecture impossible", error.message);
-    return NextResponse.json({ error: "Lecture impossible." }, { status: 500 });
+    return json(auth, { error: "Lecture impossible." }, { status: 500 });
   }
 
-  return NextResponse.json({ data, count, limit, offset });
+  return json(auth, { data, count, limit, offset });
 }
 
 export async function POST(request: NextRequest) {
@@ -50,12 +56,12 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Corps JSON invalide." }, { status: 400 });
+    return json(auth, { error: "Corps JSON invalide." }, { status: 400 });
   }
 
   const parsed = dealCreateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: firstIssue(parsed.error) }, { status: 422 });
+    return json(auth, { error: firstIssue(parsed.error) }, { status: 422 });
   }
 
   const admin = createAdminClient();
@@ -70,10 +76,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (!stage) {
-    return NextResponse.json(
-      { error: "stage_id inconnu dans cet espace." },
-      { status: 422 },
-    );
+    return json(auth, { error: "stage_id inconnu dans cet espace." }, { status: 422 });
   }
 
   const { data, error } = await admin
@@ -89,7 +92,7 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     console.error("[api/v1/deals] création impossible", error.message);
-    return NextResponse.json({ error: "Création impossible." }, { status: 500 });
+    return json(auth, { error: "Création impossible." }, { status: 500 });
   }
 
   const payload = { deal: data, stage };
@@ -101,5 +104,5 @@ export async function POST(request: NextRequest) {
     dispatchWebhooks(admin, auth.workspaceId, "deal.created", payload),
   ]);
 
-  return NextResponse.json({ data }, { status: 201 });
+  return json(auth, { data }, { status: 201 });
 }

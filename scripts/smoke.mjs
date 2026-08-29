@@ -190,6 +190,8 @@ try {
     ["/settings/members", "Membres"],
     ["/settings/integrations", "Intégrations"],
     ["/settings/api", "Clés API"],
+    ["/settings/emails", "Modèles"],
+    ["/calendar", "Calendrier"],
   ];
 
   for (const [path, marker] of pages) {

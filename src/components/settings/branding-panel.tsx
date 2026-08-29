@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { updateBranding, updateWorkspace } from "@/server/actions/workspace-settings";
+import { ImageUpload } from "@/components/shell/image-upload";
 import type { Branding } from "@/lib/workspace";
 import { cn } from "@/lib/utils";
 
@@ -48,11 +49,13 @@ const TIMEZONES = [
 ];
 
 export function BrandingPanel({
+  workspaceId,
   workspaceName,
   timezone,
   branding,
   canManage,
 }: {
+  workspaceId: string;
   workspaceName: string;
   timezone: string;
   branding: Branding;
@@ -148,13 +151,14 @@ export function BrandingPanel({
             </Select>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="ws-logo">URL du logo</Label>
-            <Input
-              id="ws-logo"
-              value={logoUrl}
-              onChange={(e) => setLogoUrl(e.target.value)}
-              placeholder="https://…"
+          <div className="flex flex-col gap-1.5 sm:col-span-2">
+            <Label>Logo</Label>
+            <ImageUpload
+              workspaceId={workspaceId}
+              folder="logo"
+              value={logoUrl || null}
+              onChange={(url) => setLogoUrl(url ?? "")}
+              label="Logo de l'espace"
               disabled={!canManage || pending}
             />
           </div>

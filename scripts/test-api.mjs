@@ -217,7 +217,58 @@ try {
   const openTasks = await call("/api/v1/tasks?done=false", { key: a.apiKey });
   check("filtre ?done=false fonctionne", (openTasks.payload?.count ?? 0) >= 1);
 
-  // --- 6. Routes système ----------------------------------------------------
+  // --- 6. Ressource par identifiant : PATCH et DELETE ---------------------
+  console.log("\n6. PATCH, DELETE et quota");
+
+  const getOne = await call(`/api/v1/companies/${companyId}`, { key: a.apiKey });
+  check("GET /companies/:id", getOne.status === 200 && getOne.payload?.data?.id === companyId, `HTTP ${getOne.status}`);
+
+  const patched = await call(`/api/v1/companies/${companyId}`, {
+    key: a.apiKey, method: "PATCH", body: { city: "Liege", sector: "Industrie" },
+  });
+  check(
+    "PATCH modifie bien les champs",
+    patched.status === 200 && patched.payload?.data?.city === "Liege" && patched.payload?.data?.sector === "Industrie",
+    `HTTP ${patched.status}`,
+  );
+
+  const patchInvalid = await call(`/api/v1/companies/${companyId}`, {
+    key: a.apiKey, method: "PATCH", body: { email: "pas-une-adresse" },
+  });
+  check("PATCH avec e-mail invalide donne 422", patchInvalid.status === 422, `HTTP ${patchInvalid.status}`);
+
+  const foreignPatch = await call(`/api/v1/companies/${companyId}`, {
+    key: b.apiKey, method: "PATCH", body: { city: "Pirate" },
+  });
+  check("la cle de B ne peut pas modifier une fiche de A", foreignPatch.status === 404, `HTTP ${foreignPatch.status}`);
+
+  const badId = await call("/api/v1/companies/pas-un-uuid", { key: a.apiKey });
+  check("identifiant mal forme donne 400", badId.status === 400, `HTTP ${badId.status}`);
+
+  const missing = await call("/api/v1/companies/00000000-0000-0000-0000-000000000000", { key: a.apiKey });
+  check("identifiant inconnu donne 404", missing.status === 404, `HTTP ${missing.status}`);
+
+  const trashed = await call(`/api/v1/companies/${companyId}`, { key: a.apiKey, method: "DELETE" });
+  check("DELETE met a la corbeille", trashed.status === 200 && trashed.payload?.deleted === "trashed", `HTTP ${trashed.status}`);
+
+  const afterDelete = await call("/api/v1/companies", { key: a.apiKey });
+  check(
+    "la fiche a la corbeille disparait de la liste",
+    !afterDelete.payload?.data?.some((c) => c.id === companyId),
+    `${afterDelete.payload?.count ?? 0} ligne(s)`,
+  );
+
+  const headed = await fetch(`${BASE_URL}/api/v1/companies`, {
+    headers: { Authorization: `Bearer ${a.apiKey}` },
+  });
+  check(
+    "en-tetes de quota presents",
+    headed.headers.has("x-ratelimit-limit") && headed.headers.has("x-ratelimit-remaining"),
+    `limite ${headed.headers.get("x-ratelimit-limit")}, reste ${headed.headers.get("x-ratelimit-remaining")}`,
+  );
+
+
+  // --- 7. Routes système ----------------------------------------------------
   console.log("\n6. Routes système");
   const cronNoSecret = await call("/api/cron/reminders");
   check("cron sans secret → 401", cronNoSecret.status === 401, `HTTP ${cronNoSecret.status}`);

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import type { Database } from "@/types/db";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { requireWorkspace } from "@/lib/workspace";
@@ -227,5 +228,58 @@ export async function deleteTask(id: string): Promise<ActionResult> {
   if (error) return fail(pgError(error, "Suppression refusée."));
 
   revalidatePath("/today");
+  return ok(undefined);
+}
+
+/**
+ * Déplace une relance sur un autre jour, en conservant son heure.
+ * Utilisé par le glisser-déposer de la vue calendrier.
+ */
+export async function rescheduleTask(
+  id: string,
+  /** Jour cible au format AAAA-MM-JJ, en heure locale de l'utilisateur. */
+  day: string,
+): Promise<ActionResult> {
+  const parsed = z
+    .object({ id: z.uuid(), day: z.iso.date("Jour invalide.") })
+    .safeParse({ id, day });
+  if (!parsed.success) return fail(firstIssue(parsed.error));
+
+  const workspace = await requireWorkspace();
+  const supabase = await createClient();
+
+  const { data: current } = await supabase
+    .from("tasks")
+    .select("due_at, remind_at")
+    .eq("id", parsed.data.id)
+    .eq("workspace_id", workspace.id)
+    .single();
+
+  if (!current) return fail("Relance introuvable. Recharge la page.");
+
+  const [year, month, dayOfMonth] = parsed.data.day.split("-").map(Number);
+  const previous = new Date(current.due_at);
+  const next = new Date(previous);
+  next.setFullYear(year, month - 1, dayOfMonth);
+
+  const shift = next.getTime() - previous.getTime();
+
+  const { error } = await supabase
+    .from("tasks")
+    .update({
+      due_at: next.toISOString(),
+      // Le rappel garde son avance sur l'échéance.
+      remind_at: current.remind_at
+        ? new Date(new Date(current.remind_at).getTime() + shift).toISOString()
+        : null,
+    })
+    .eq("id", parsed.data.id)
+    .eq("workspace_id", workspace.id);
+
+  if (error) return fail(pgError(error, "Déplacement impossible. Réessaie."));
+
+  await syncTaskToCalendar(parsed.data.id);
+  revalidatePath("/today");
+  revalidatePath("/calendar");
   return ok(undefined);
 }

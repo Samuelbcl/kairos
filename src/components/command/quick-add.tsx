@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Building2,
   CalendarClock,
+  CalendarDays,
   LayoutDashboard,
   Loader2,
   Plus,
@@ -50,6 +51,7 @@ const EMPTY: Results = { companies: [], contacts: [], deals: [] };
 const NAV = [
   { href: "/", label: "Tableau de bord", icon: LayoutDashboard },
   { href: "/today", label: "Aujourd'hui", icon: CalendarClock },
+  { href: "/calendar", label: "Calendrier", icon: CalendarDays },
   { href: "/pipeline", label: "Pipeline", icon: Target },
   { href: "/contacts", label: "Contacts", icon: Building2 },
   { href: "/automations", label: "Automatisations", icon: Zap },

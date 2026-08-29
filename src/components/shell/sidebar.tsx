@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { mainNav, secondaryNav, type NavItem } from "@/config/navigation";
 import {
@@ -42,9 +43,11 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
 export function Sidebar({
   workspaces,
   currentId,
+  isPlatformAdmin,
 }: {
   workspaces: WorkspaceOption[];
   currentId: string;
+  isPlatformAdmin: boolean;
 }) {
   const pathname = usePathname();
 
@@ -67,6 +70,12 @@ export function Sidebar({
       </nav>
 
       <nav className="flex flex-col gap-0.5 border-t border-sidebar-border px-2.5 py-2.5">
+        {isPlatformAdmin ? (
+          <NavLink
+            item={{ href: "/admin", label: "Console éditeur", icon: ShieldCheck }}
+            pathname={pathname}
+          />
+        ) : null}
         {secondaryNav.map((item) => (
           <NavLink key={item.href} item={item} pathname={pathname} />
         ))}

@@ -4,19 +4,23 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hashApiKey } from "@/lib/crypto";
+import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 
 export type ApiContext = {
   workspaceId: string;
   keyId: string;
+  /** À poser sur la réponse pour que l'appelant puisse s'auto-réguler. */
+  headers: Record<string, string>;
 };
 
 /**
- * Authentifie un appel à /api/v1/* par clé API.
+ * Authentifie un appel à /api/v1/* par clé API, puis applique la limitation
+ * de débit.
  *
- * La clé n'est jamais stockée en clair : on hache celle reçue et on cherche
- * le hash. Comme les routes API n'ont pas de session utilisateur, elles passent
- * par le client service_role — d'où le filtrage explicite sur workspace_id
- * dans chaque requête, qui remplace la RLS.
+ * La clé n'est jamais stockée en clair : on hache celle reçue et on cherche le
+ * hash. Comme ces routes n'ont pas de session utilisateur, elles passent par le
+ * client service_role — d'où le filtrage explicite sur workspace_id dans chaque
+ * requête, qui remplace la RLS.
  */
 export async function authenticateApiKey(
   request: NextRequest,
@@ -53,13 +57,26 @@ export async function authenticateApiKey(
     );
   }
 
+  const limit = checkRateLimit(data.id);
+  const headers = rateLimitHeaders(limit);
+
+  if (!limit.allowed) {
+    return NextResponse.json(
+      {
+        error: "Trop de requêtes.",
+        hint: `Attends ${limit.retryAfterSeconds} seconde(s). La limite est de 120 requêtes par minute et par clé.`,
+      },
+      { status: 429, headers },
+    );
+  }
+
   // Trace de dernière utilisation, sans bloquer la réponse.
   void admin
     .from("api_keys")
     .update({ last_used_at: new Date().toISOString() })
     .eq("id", data.id);
 
-  return { workspaceId: data.workspace_id, keyId: data.id };
+  return { workspaceId: data.workspace_id, keyId: data.id, headers };
 }
 
 export function isErrorResponse(
@@ -74,4 +91,27 @@ export function readPagination(request: NextRequest) {
   const limit = Math.min(Math.max(Number(searchParams.get("limit") ?? 50), 1), 200);
   const offset = Math.max(Number(searchParams.get("offset") ?? 0), 0);
   return { limit, offset };
+}
+
+/** Réponse JSON accompagnée des en-têtes de quota. */
+export function json(
+  auth: ApiContext,
+  body: unknown,
+  init: { status?: number } = {},
+) {
+  return NextResponse.json(body, {
+    status: init.status ?? 200,
+    headers: auth.headers,
+  });
+}
+
+/** Corps JSON, ou une réponse 400 si le corps est illisible. */
+export async function readJson(
+  request: NextRequest,
+): Promise<unknown | NextResponse> {
+  try {
+    return await request.json();
+  } catch {
+    return NextResponse.json({ error: "Corps JSON invalide." }, { status: 400 });
+  }
 }
