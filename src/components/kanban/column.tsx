@@ -2,18 +2,20 @@
 
 import { useDroppable } from "@dnd-kit/core";
 import { DealCard } from "./deal-card";
+import { StageHeader } from "./stage-header";
 import type { BoardDeal, BoardStage } from "./board";
-import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export function KanbanColumn({
   stage,
   deals,
   isDragging,
+  canManage,
 }: {
   stage: BoardStage;
   deals: BoardDeal[];
   isDragging: boolean;
+  canManage: boolean;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
 
@@ -28,21 +30,13 @@ export function KanbanColumn({
         isOver && "border-primary bg-brand-soft",
       )}
     >
-      <header className="flex items-center gap-2 border-b px-3 py-2.5">
-        <span
-          className="size-2 shrink-0 rounded-full"
-          style={{ backgroundColor: stage.color }}
-          aria-hidden
-        />
-        <h2 className="min-w-0 flex-1 truncate text-sm font-medium">{stage.name}</h2>
-        <span className="tabular text-xs text-muted-foreground">{deals.length}</span>
-      </header>
-
-      {total > 0 ? (
-        <p className="tabular border-b px-3 py-1.5 text-xs text-muted-foreground">
-          {formatMoney(total, deals[0]?.currency ?? "EUR")}
-        </p>
-      ) : null}
+      <StageHeader
+        stage={stage}
+        count={deals.length}
+        total={total}
+        currency={deals[0]?.currency ?? "EUR"}
+        canManage={canManage}
+      />
 
       <div className="flex min-h-24 flex-1 flex-col gap-2 p-2">
         {deals.map((deal) => (

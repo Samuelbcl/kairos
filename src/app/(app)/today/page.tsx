@@ -57,6 +57,7 @@ export default async function TodayPage() {
         .select("id, title, value, currency, last_activity_at, companies(id, name), stages(name, color)")
         .eq("workspace_id", workspace.id)
         .eq("status", "open")
+        .is("deleted_at", null)
         .lt("last_activity_at", staleBefore.toISOString())
         .order("last_activity_at")
         .limit(10),

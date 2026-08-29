@@ -169,7 +169,7 @@ export async function deleteDeal(id: string): Promise<ActionResult> {
 
   const { error } = await supabase
     .from("deals")
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq("id", id)
     .eq("workspace_id", workspace.id);
 

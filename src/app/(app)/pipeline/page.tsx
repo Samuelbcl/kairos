@@ -59,6 +59,7 @@ export default async function PipelinePage() {
         "id, title, value, currency, priority, status, stage_id, expected_close, last_activity_at, companies(id, name)",
       )
       .eq("workspace_id", workspace.id)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(500),
   ]);
@@ -77,6 +78,7 @@ export default async function PipelinePage() {
     id: s.id,
     name: s.name,
     color: s.color,
+    probability: s.probability,
     isWon: s.is_won,
     isLost: s.is_lost,
   }));
@@ -109,7 +111,11 @@ export default async function PipelinePage() {
           description="Ajoute des étapes dans Réglages → Espace pour commencer à suivre tes opportunités."
         />
       ) : (
-        <KanbanBoard stages={boardStages} deals={boardDeals} />
+        <KanbanBoard
+          stages={boardStages}
+          deals={boardDeals}
+          canManage={workspace.role !== "member"}
+        />
       )}
     </>
   );

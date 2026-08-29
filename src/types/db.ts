@@ -216,6 +216,7 @@ export type Database = {
           country: string | null
           created_at: string
           custom: Json
+          deleted_at: string | null
           email: string | null
           id: string
           name: string
@@ -235,6 +236,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           custom?: Json
+          deleted_at?: string | null
           email?: string | null
           id?: string
           name: string
@@ -254,6 +256,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           custom?: Json
+          deleted_at?: string | null
           email?: string | null
           id?: string
           name?: string
@@ -289,6 +292,7 @@ export type Database = {
           company_id: string | null
           created_at: string
           custom: Json
+          deleted_at: string | null
           email: string | null
           first_name: string | null
           id: string
@@ -304,6 +308,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           custom?: Json
+          deleted_at?: string | null
           email?: string | null
           first_name?: string | null
           id?: string
@@ -319,6 +324,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           custom?: Json
+          deleted_at?: string | null
           email?: string | null
           first_name?: string | null
           id?: string
@@ -401,6 +407,7 @@ export type Database = {
           contact_id: string | null
           created_at: string
           currency: string
+          deleted_at: string | null
           expected_close: string | null
           id: string
           last_activity_at: string | null
@@ -419,6 +426,7 @@ export type Database = {
           contact_id?: string | null
           created_at?: string
           currency?: string
+          deleted_at?: string | null
           expected_close?: string | null
           id?: string
           last_activity_at?: string | null
@@ -437,6 +445,7 @@ export type Database = {
           contact_id?: string | null
           created_at?: string
           currency?: string
+          deleted_at?: string | null
           expected_close?: string | null
           id?: string
           last_activity_at?: string | null
@@ -506,6 +515,7 @@ export type Database = {
           provider: Database["public"]["Enums"]["integration_provider"]
           refresh_token_enc: string | null
           scopes: string[]
+          share_with_workspace: boolean
           updated_at: string
           user_id: string
           workspace_id: string
@@ -520,6 +530,7 @@ export type Database = {
           provider: Database["public"]["Enums"]["integration_provider"]
           refresh_token_enc?: string | null
           scopes?: string[]
+          share_with_workspace?: boolean
           updated_at?: string
           user_id: string
           workspace_id: string
@@ -534,6 +545,7 @@ export type Database = {
           provider?: Database["public"]["Enums"]["integration_provider"]
           refresh_token_enc?: string | null
           scopes?: string[]
+          share_with_workspace?: boolean
           updated_at?: string
           user_id?: string
           workspace_id?: string
@@ -934,6 +946,7 @@ export type Database = {
       }
       is_workspace_admin: { Args: { ws: string }; Returns: boolean }
       is_workspace_member: { Args: { ws: string }; Returns: boolean }
+      purge_deleted: { Args: { older_than_days?: number }; Returns: number }
       rename_workspace_tag: {
         Args: { new_name: string; old_name: string; ws: string }
         Returns: undefined

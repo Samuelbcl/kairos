@@ -9,9 +9,9 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/shell/page-header";
 import { EmptyState } from "@/components/shell/empty-state";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PipelineBars } from "@/components/dashboard/pipeline-bars";
+import { Onboarding } from "@/components/dashboard/onboarding";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentWorkspace } from "@/lib/workspace";
 import { formatMoney, formatRelative } from "@/lib/format";
@@ -51,16 +51,19 @@ export default async function DashboardPage() {
     supabase
       .from("companies")
       .select("id", { count: "exact", head: true })
-      .eq("workspace_id", workspace.id),
+      .eq("workspace_id", workspace.id)
+      .is("deleted_at", null),
     supabase
       .from("deals")
       .select("id, value, stage_id")
       .eq("workspace_id", workspace.id)
-      .eq("status", "open"),
+      .eq("status", "open")
+      .is("deleted_at", null),
     supabase
       .from("deals")
       .select("id, status")
-      .eq("workspace_id", workspace.id),
+      .eq("workspace_id", workspace.id)
+      .is("deleted_at", null),
     supabase
       .from("tasks")
       .select("id, due_at")
@@ -84,6 +87,20 @@ export default async function DashboardPage() {
       .order("created_at", { ascending: false })
       .limit(6),
   ]);
+
+  // Où en est cet espace dans ses premiers pas.
+  const [{ count: calendarCount }, { count: automationCount }] =
+    await Promise.all([
+      supabase
+        .from("integrations")
+        .select("id", { count: "exact", head: true })
+        .eq("workspace_id", workspace.id),
+      supabase
+        .from("automations")
+        .select("id", { count: "exact", head: true })
+        .eq("workspace_id", workspace.id)
+        .eq("enabled", true),
+    ]);
 
   const nowMs = now.getTime();
   const overdueCount = (openTasks ?? []).filter(
@@ -121,106 +138,109 @@ export default async function DashboardPage() {
         description={`${workspace.name} · fuseau ${workspace.timezone}`}
       />
 
-      {isEmpty ? (
-        <EmptyState
-          icon={LayoutDashboard}
-          title="Ton espace est encore vide."
-          description="Importe ton tableur pour démarrer, ou ajoute ta première entreprise avec ⌘K."
-          action={
-            <Button
-              nativeButton={false}
-              render={<Link href="/contacts/import" />}
-            >
-              Importer un CSV
-            </Button>
-          }
+      <div className="flex flex-col gap-5">
+        <Onboarding
+          hasCompanies={(companiesCount ?? 0) > 0}
+          hasCalendar={(calendarCount ?? 0) > 0}
+          hasAutomation={(automationCount ?? 0) > 0}
         />
-      ) : (
-        <div className="flex flex-col gap-5">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              label="Relances à faire"
-              value={String(openTasks?.length ?? 0)}
-              hint={
-                overdueCount > 0
-                  ? `dont ${overdueCount} en retard`
-                  : "aucune en retard"
-              }
-              tone={overdueCount > 0 ? "danger" : undefined}
-              icon={CalendarClock}
-              href="/today"
-            />
-            <StatCard
-              label="Faites cette semaine"
-              value={String(doneThisWeek ?? 0)}
-              hint="depuis lundi"
-              icon={Flame}
-            />
-            <StatCard
-              label="Valeur du pipeline"
-              value={formatMoney(pipelineValue)}
-              hint={`${openDeals?.length ?? 0} opportunité${(openDeals?.length ?? 0) > 1 ? "s" : ""} ouverte${(openDeals?.length ?? 0) > 1 ? "s" : ""}`}
-              icon={Target}
-              href="/pipeline"
-            />
-            <StatCard
-              label="Taux de réussite"
-              value={winRate === null ? "—" : `${winRate} %`}
-              hint={
-                winRate === null
-                  ? "aucune affaire encore close"
-                  : `${won} gagnée${won > 1 ? "s" : ""} · ${lost} perdue${lost > 1 ? "s" : ""}`
-              }
-              icon={TrendingUp}
-            />
-          </div>
 
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Pipeline par étape</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <PipelineBars stages={byStage} total={pipelineValue} />
-              </CardContent>
-            </Card>
+        {isEmpty ? (
+          <EmptyState
+            icon={LayoutDashboard}
+            title="Rien à afficher pour l'instant."
+            description="Les chiffres apparaîtront dès que tu auras des entreprises et des opportunités."
+          />
+        ) : (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <StatCard
+                label="Relances à faire"
+                value={String(openTasks?.length ?? 0)}
+                hint={
+                  overdueCount > 0
+                    ? `dont ${overdueCount} en retard`
+                    : "aucune en retard"
+                }
+                tone={overdueCount > 0 ? "danger" : undefined}
+                icon={CalendarClock}
+                href="/today"
+              />
+              <StatCard
+                label="Faites cette semaine"
+                value={String(doneThisWeek ?? 0)}
+                hint="depuis lundi"
+                icon={Flame}
+              />
+              <StatCard
+                label="Valeur du pipeline"
+                value={formatMoney(pipelineValue)}
+                hint={`${openDeals?.length ?? 0} opportunité${(openDeals?.length ?? 0) > 1 ? "s" : ""} ouverte${(openDeals?.length ?? 0) > 1 ? "s" : ""}`}
+                icon={Target}
+                href="/pipeline"
+              />
+              <StatCard
+                label="Taux de réussite"
+                value={winRate === null ? "—" : `${winRate} %`}
+                hint={
+                  winRate === null
+                    ? "aucune affaire encore close"
+                    : `${won} gagnée${won > 1 ? "s" : ""} · ${lost} perdue${lost > 1 ? "s" : ""}`
+                }
+                icon={TrendingUp}
+              />
+            </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Activité récente</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {recentActivity?.length ? (
-                  <ul className="flex flex-col gap-2.5">
-                    {recentActivity.map((activity) => (
-                      <li key={activity.id} className="flex items-start gap-2">
-                        <CircleCheck
-                          className="mt-0.5 size-3.5 shrink-0 text-muted-foreground"
-                          strokeWidth={1.75}
-                          aria-hidden
-                        />
-                        <div className="min-w-0">
-                          <p className="truncate text-sm">
-                            {activity.content ?? "Événement"}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatRelative(activity.created_at)}
-                          </p>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Rien encore. L&apos;activité apparaîtra ici au fil de tes
-                    échanges.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      )}
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Pipeline par étape</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <PipelineBars stages={byStage} total={pipelineValue} />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Activité récente</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {recentActivity?.length ? (
+                    <ul className="flex flex-col gap-2.5">
+                      {recentActivity.map((activity) => (
+                        <li
+                          key={activity.id}
+                          className="flex items-start gap-2"
+                        >
+                          <CircleCheck
+                            className="mt-0.5 size-3.5 shrink-0 text-muted-foreground"
+                            strokeWidth={1.75}
+                            aria-hidden
+                          />
+                          <div className="min-w-0">
+                            <p className="truncate text-sm">
+                              {activity.content ?? "Événement"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatRelative(activity.created_at)}
+                            </p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Rien encore. L&apos;activité apparaîtra ici au fil de tes
+                      échanges.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        )}
+      </div>
     </>
   );
 }

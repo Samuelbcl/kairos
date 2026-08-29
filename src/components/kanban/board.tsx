@@ -19,6 +19,7 @@ export type BoardStage = {
   id: string;
   name: string;
   color: string;
+  probability: number;
   isWon: boolean;
   isLost: boolean;
 };
@@ -39,9 +40,11 @@ export type BoardDeal = {
 export function KanbanBoard({
   stages,
   deals,
+  canManage,
 }: {
   stages: BoardStage[];
   deals: BoardDeal[];
+  canManage: boolean;
 }) {
   const [, startTransition] = useTransition();
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -117,6 +120,7 @@ export function KanbanBoard({
             stage={stage}
             deals={byStage.get(stage.id) ?? []}
             isDragging={draggingId !== null}
+            canManage={canManage}
           />
         ))}
       </div>

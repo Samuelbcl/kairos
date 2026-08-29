@@ -70,8 +70,11 @@ export async function inviteMember(
   let invited = false;
 
   if (!userId) {
+    // `invited_to_workspace` empêche handle_new_user de créer un espace perso :
+    // la personne rejoint celui qui l'invite, elle n'en a pas besoin d'un second.
     const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
       redirectTo: `${env.appUrl}/auth/callback`,
+      data: { invited_to_workspace: true },
     });
     if (error) {
       console.error("[members] invitation impossible", error.message);

@@ -44,6 +44,36 @@ export async function getIntegration(
   return ensureFreshToken(supabase, data[0]);
 }
 
+/**
+ * Intégration à utiliser quand aucun utilisateur n'est connecté — relance créée
+ * par l'API, par une automatisation, ou poussée par le cron.
+ *
+ * Priorité au responsable de la relance s'il a connecté un agenda ; sinon le
+ * premier agenda de l'espace qui accepte de recevoir les relances des autres.
+ * Sans ça, ces relances n'atteignaient jamais aucun agenda.
+ */
+export async function getWorkspaceIntegration(
+  supabase: Client,
+  workspaceId: string,
+  preferredUserId?: string | null,
+): Promise<Integration | null> {
+  const { data, error } = await supabase
+    .from("integrations")
+    .select("*")
+    .eq("workspace_id", workspaceId)
+    .order("created_at", { ascending: true });
+
+  if (error || !data?.length) return null;
+
+  const own = preferredUserId
+    ? data.find((integration) => integration.user_id === preferredUserId)
+    : undefined;
+  const shared = data.find((integration) => integration.share_with_workspace);
+  const chosen = own ?? shared;
+
+  return chosen ? ensureFreshToken(supabase, chosen) : null;
+}
+
 /** Rafraîchit le jeton d'accès s'il expire dans moins de cinq minutes. */
 export async function ensureFreshToken(
   supabase: Client,

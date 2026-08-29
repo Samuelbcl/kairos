@@ -3,30 +3,28 @@ import { Building2, Upload, User } from "lucide-react";
 import { PageHeader } from "@/components/shell/page-header";
 import { EmptyState } from "@/components/shell/empty-state";
 import { Button } from "@/components/ui/button";
-import { TagBadge } from "@/components/contacts/tag-badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { ContactsToolbar } from "@/components/contacts/contacts-toolbar";
 import { NewCompanyButton } from "@/components/contacts/new-company-button";
+import {
+  ContactsTable,
+  type CompanyRow,
+  type PersonRow,
+} from "@/components/contacts/contacts-table";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentWorkspace } from "@/lib/workspace";
-import { formatRelative, fullName } from "@/lib/format";
 
 export const metadata = { title: "Contacts" };
 
-type Tab = "companies" | "people";
+/** Au-delà, on pagine plutôt que de tronquer en silence. */
+const PAGE_SIZE = 100;
 
 export default async function ContactsPage(props: PageProps<"/contacts">) {
   const params = await props.searchParams;
-  const tab: Tab = params.tab === "people" ? "people" : "companies";
+  const tab: "companies" | "people" = params.tab === "people" ? "people" : "companies";
   const query = typeof params.q === "string" ? params.q.trim() : "";
   const tag = typeof params.tag === "string" ? params.tag : "";
+  const page = Math.max(Number(params.page ?? 1) || 1, 1);
+  const from = (page - 1) * PAGE_SIZE;
 
   const workspace = await getCurrentWorkspace();
   if (!workspace) {
@@ -45,43 +43,37 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
   const supabase = await createClient();
   const pattern = `%${query}%`;
 
-  // Catalogue de tags pour le filtre.
-  const { data: tagRows } = await supabase
-    .from("tags")
-    .select("name, color")
-    .eq("workspace_id", workspace.id)
-    .order("name");
+  const [{ data: tagRows }, { data: stages }] = await Promise.all([
+    supabase
+      .from("tags")
+      .select("name, color")
+      .eq("workspace_id", workspace.id)
+      .order("name"),
+    supabase
+      .from("stages")
+      .select("id, name")
+      .eq("workspace_id", workspace.id)
+      .order("position"),
+  ]);
 
-  let companies: {
-    id: string;
-    name: string;
-    email: string | null;
-    sector: string | null;
-    city: string | null;
-    tags: string[];
-    updated_at: string;
-    contacts: { count: number }[];
-  }[] = [];
+  const tagColors = Object.fromEntries(
+    (tagRows ?? []).map((row) => [row.name, row.color]),
+  );
 
-  let people: {
-    id: string;
-    first_name: string | null;
-    last_name: string | null;
-    email: string | null;
-    role_title: string | null;
-    tags: string[];
-    companies: { id: string; name: string } | null;
-  }[] = [];
+  let companies: CompanyRow[] = [];
+  let people: PersonRow[] = [];
+  let total = 0;
 
   if (tab === "companies") {
     let request = supabase
       .from("companies")
-      .select(
-        "id, name, email, sector, city, tags, updated_at, contacts(count)",
-      )
+      .select("id, name, email, sector, city, tags, updated_at, contacts(count)", {
+        count: "exact",
+      })
       .eq("workspace_id", workspace.id)
+      .is("deleted_at", null)
       .order("updated_at", { ascending: false })
-      .limit(200);
+      .range(from, from + PAGE_SIZE - 1);
 
     if (query) {
       request = request.or(
@@ -90,19 +82,30 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
     }
     if (tag) request = request.contains("tags", [tag]);
 
-    const { data, error } = await request;
-    if (error)
-      console.error("[contacts] lecture des entreprises", error.message);
-    companies = data ?? [];
+    const { data, error, count } = await request;
+    if (error) console.error("[contacts] lecture des entreprises", error.message);
+
+    total = count ?? 0;
+    companies = (data ?? []).map((row) => ({
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      sector: row.sector,
+      city: row.city,
+      tags: row.tags,
+      updated_at: row.updated_at,
+      contactCount: row.contacts?.[0]?.count ?? 0,
+    }));
   } else {
     let request = supabase
       .from("contacts")
-      .select(
-        "id, first_name, last_name, email, role_title, tags, companies(id, name)",
-      )
+      .select("id, first_name, last_name, email, role_title, tags, companies(id, name)", {
+        count: "exact",
+      })
       .eq("workspace_id", workspace.id)
+      .is("deleted_at", null)
       .order("updated_at", { ascending: false })
-      .limit(200);
+      .range(from, from + PAGE_SIZE - 1);
 
     if (query) {
       request = request.or(
@@ -111,13 +114,34 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
     }
     if (tag) request = request.contains("tags", [tag]);
 
-    const { data, error } = await request;
+    const { data, error, count } = await request;
     if (error) console.error("[contacts] lecture des contacts", error.message);
-    people = data ?? [];
+
+    total = count ?? 0;
+    people = (data ?? []).map((row) => ({
+      id: row.id,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      email: row.email,
+      roleTitle: row.role_title,
+      tags: row.tags,
+      company: row.companies ?? null,
+    }));
   }
 
-  const tagColors = new Map((tagRows ?? []).map((t) => [t.name, t.color]));
   const isFiltered = Boolean(query || tag);
+  const rowCount = tab === "companies" ? companies.length : people.length;
+  const lastPage = Math.max(Math.ceil(total / PAGE_SIZE), 1);
+
+  function pageHref(target: number) {
+    const next = new URLSearchParams();
+    if (tab === "people") next.set("tab", "people");
+    if (query) next.set("q", query);
+    if (tag) next.set("tag", tag);
+    if (target > 1) next.set("page", String(target));
+    const qs = next.toString();
+    return qs ? `/contacts?${qs}` : "/contacts";
+  }
 
   return (
     <>
@@ -132,7 +156,7 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
               render={<Link href="/contacts/import" />}
             >
               <Upload className="size-4" strokeWidth={1.75} aria-hidden />
-              Importer un CSV
+              Importer
             </Button>
             <NewCompanyButton />
           </div>
@@ -144,153 +168,66 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
         query={query}
         tag={tag}
         tags={tagRows ?? []}
-        companiesCount={tab === "companies" ? companies.length : undefined}
-        peopleCount={tab === "people" ? people.length : undefined}
+        total={total}
       />
 
-      {tab === "companies" ? (
-        companies.length === 0 ? (
-          <EmptyState
-            icon={Building2}
-            title={
-              isFiltered
-                ? "Aucune entreprise ne correspond."
-                : "Aucune entreprise pour l'instant."
-            }
-            description={
-              isFiltered
-                ? "Essaie un autre terme, ou retire le filtre de tag."
-                : "Importe ton tableur, ou ajoute ta première entreprise avec ⌘K."
-            }
-          />
-        ) : (
-          <div className="overflow-x-auto rounded-lg border bg-card">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Entreprise</TableHead>
-                  <TableHead className="hidden md:table-cell">
-                    Secteur
-                  </TableHead>
-                  <TableHead className="hidden lg:table-cell">Ville</TableHead>
-                  <TableHead className="hidden sm:table-cell">
-                    Contacts
-                  </TableHead>
-                  <TableHead className="hidden xl:table-cell">
-                    Modifié
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {companies.map((company) => (
-                  <TableRow key={company.id}>
-                    <TableCell>
-                      <Link
-                        href={`/companies/${company.id}`}
-                        className="font-medium hover:underline"
-                      >
-                        {company.name}
-                      </Link>
-                      {company.email ? (
-                        <span className="block truncate text-xs text-muted-foreground">
-                          {company.email}
-                        </span>
-                      ) : null}
-                      {company.tags.length ? (
-                        <span className="mt-1 flex flex-wrap gap-1">
-                          {company.tags.map((t) => (
-                            <TagBadge
-                              key={t}
-                              name={t}
-                              color={tagColors.get(t)}
-                              className="text-[10px]"
-                            />
-                          ))}
-                        </span>
-                      ) : null}
-                    </TableCell>
-                    <TableCell className="hidden text-muted-foreground md:table-cell">
-                      {company.sector ?? "—"}
-                    </TableCell>
-                    <TableCell className="hidden text-muted-foreground lg:table-cell">
-                      {company.city ?? "—"}
-                    </TableCell>
-                    <TableCell className="tabular hidden text-muted-foreground sm:table-cell">
-                      {company.contacts?.[0]?.count ?? 0}
-                    </TableCell>
-                    <TableCell className="hidden text-xs text-muted-foreground xl:table-cell">
-                      {formatRelative(company.updated_at)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )
-      ) : people.length === 0 ? (
+      {rowCount === 0 ? (
         <EmptyState
-          icon={User}
+          icon={tab === "companies" ? Building2 : User}
           title={
             isFiltered
-              ? "Aucun contact ne correspond."
-              : "Aucun contact pour l'instant."
+              ? "Aucun résultat."
+              : tab === "companies"
+                ? "Aucune entreprise pour l'instant."
+                : "Aucun contact pour l'instant."
           }
           description={
             isFiltered
               ? "Essaie un autre terme, ou retire le filtre de tag."
-              : "Ajoute une personne depuis la fiche d'une entreprise, ou avec ⌘K."
+              : "Importe ton tableur, ou ajoute ta première fiche avec ⌘K."
           }
         />
       ) : (
-        <div className="overflow-x-auto rounded-lg border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Personne</TableHead>
-                <TableHead className="hidden md:table-cell">Fonction</TableHead>
-                <TableHead className="hidden sm:table-cell">
-                  Entreprise
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {people.map((person) => (
-                <TableRow key={person.id}>
-                  <TableCell>
-                    <Link
-                      href={`/contacts/${person.id}`}
-                      className="font-medium hover:underline"
-                    >
-                      {fullName(person.first_name, person.last_name) ||
-                        "Sans nom"}
-                    </Link>
-                    {person.email ? (
-                      <span className="block truncate text-xs text-muted-foreground">
-                        {person.email}
-                      </span>
-                    ) : null}
-                  </TableCell>
-                  <TableCell className="hidden text-muted-foreground md:table-cell">
-                    {person.role_title ?? "—"}
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    {person.companies ? (
-                      <Link
-                        href={`/companies/${person.companies.id}`}
-                        className="text-muted-foreground hover:underline"
-                      >
-                        {person.companies.name}
-                      </Link>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <ContactsTable
+          entity={tab === "companies" ? "company" : "contact"}
+          companies={companies}
+          people={people}
+          tagColors={tagColors}
+          tags={tagRows ?? []}
+          stages={stages ?? []}
+        />
       )}
+
+      {lastPage > 1 ? (
+        <nav
+          className="mt-4 flex items-center justify-between gap-3"
+          aria-label="Pagination"
+        >
+          <span className="tabular text-sm text-muted-foreground">
+            Page {page} sur {lastPage}
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              nativeButton={false}
+              render={<Link href={pageHref(page - 1)} />}
+            >
+              Précédent
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= lastPage}
+              nativeButton={false}
+              render={<Link href={pageHref(page + 1)} />}
+            >
+              Suivant
+            </Button>
+          </div>
+        </nav>
+      ) : null}
     </>
   );
 }

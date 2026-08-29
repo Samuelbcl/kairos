@@ -11,11 +11,10 @@ type Props = {
   query: string;
   tag: string;
   tags: { name: string; color: string }[];
-  companiesCount?: number;
-  peopleCount?: number;
+  total: number;
 };
 
-export function ContactsToolbar({ tab, query, tag, tags, companiesCount, peopleCount }: Props) {
+export function ContactsToolbar({ tab, query, tag, tags, total }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [term, setTerm] = useState(query);
@@ -37,11 +36,12 @@ export function ContactsToolbar({ tab, query, tag, tags, companiesCount, peopleC
       if (value) next.set(key, value);
       else next.delete(key);
     }
+    // Tout changement de filtre ramène en page 1 : rester en page 4 d'un
+    // résultat qui n'en a plus que deux affiche une liste vide sans explication.
+    next.delete("page");
     const qs = next.toString();
     return qs ? `/contacts?${qs}` : "/contacts";
   }
-
-  const count = tab === "companies" ? companiesCount : peopleCount;
 
   return (
     <div className="mb-4 flex flex-col gap-3">
@@ -74,11 +74,9 @@ export function ContactsToolbar({ tab, query, tag, tags, companiesCount, peopleC
           />
         </div>
 
-        {count !== undefined ? (
-          <span className="tabular text-sm text-muted-foreground">
-            {count} résultat{count > 1 ? "s" : ""}
-          </span>
-        ) : null}
+        <span className="tabular text-sm text-muted-foreground">
+          {total} résultat{total > 1 ? "s" : ""}
+        </span>
       </div>
 
       {tags.length > 0 ? (

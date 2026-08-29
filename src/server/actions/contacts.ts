@@ -84,7 +84,7 @@ export async function deleteContact(id: string): Promise<ActionResult> {
 
   const { error } = await supabase
     .from("contacts")
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq("id", id)
     .eq("workspace_id", workspace.id);
 
@@ -147,6 +147,7 @@ export async function searchEverything(query: string): Promise<
       .from("companies")
       .select("id, name, city")
       .eq("workspace_id", workspace.id)
+      .is("deleted_at", null)
       .or(`name.ilike.${pattern},email.ilike.${pattern},city.ilike.${pattern}`)
       .order("name")
       .limit(6),
@@ -154,6 +155,7 @@ export async function searchEverything(query: string): Promise<
       .from("contacts")
       .select("id, first_name, last_name, email, companies(name)")
       .eq("workspace_id", workspace.id)
+      .is("deleted_at", null)
       .or(
         `first_name.ilike.${pattern},last_name.ilike.${pattern},email.ilike.${pattern}`,
       )
@@ -162,6 +164,7 @@ export async function searchEverything(query: string): Promise<
       .from("deals")
       .select("id, title, stages(name)")
       .eq("workspace_id", workspace.id)
+      .is("deleted_at", null)
       .ilike("title", pattern)
       .limit(6),
   ]);

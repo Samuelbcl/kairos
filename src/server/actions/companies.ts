@@ -72,13 +72,17 @@ export async function updateCompany(input: unknown): Promise<ActionResult> {
   return ok(undefined);
 }
 
+/**
+ * Met l'entreprise à la corbeille. Ses contacts et opportunités suivent
+ * (trigger SQL), et l'ensemble reste récupérable trente jours.
+ */
 export async function deleteCompany(id: string): Promise<ActionResult> {
   const workspace = await requireWorkspace();
   const supabase = await createClient();
 
   const { error } = await supabase
     .from("companies")
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq("id", id)
     .eq("workspace_id", workspace.id);
 
