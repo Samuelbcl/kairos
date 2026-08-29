@@ -5,6 +5,7 @@ import { TagBadge } from "@/components/contacts/tag-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Timeline, type TimelineEntry } from "@/components/contacts/timeline";
 import { ContactFields } from "@/components/contacts/contact-fields";
+import { ContactTitle } from "@/components/contacts/contact-title";
 import { ContactNotes } from "@/components/contacts/contact-notes";
 import { TaskPanel } from "@/components/tasks/task-panel";
 import { DeleteCompanyButton } from "@/components/contacts/delete-company-button";
@@ -101,7 +102,7 @@ export default async function ContactPage(props: PageProps<"/contacts/[id]">) {
             <User className="size-5 text-primary" strokeWidth={1.75} aria-hidden />
           </span>
           <div className="min-w-0">
-            <h1 className="truncate text-xl font-semibold tracking-tight">{displayName}</h1>
+            <ContactTitle id={contact.id} name={displayName} />
             <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
               {contact.role_title ? <span>{contact.role_title}</span> : null}
               {contact.companies ? (

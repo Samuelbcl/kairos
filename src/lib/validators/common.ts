@@ -23,10 +23,17 @@ export const tagsSchema = z.preprocess(
   z.array(z.string().trim().min(1).max(40)).max(20),
 );
 
-/** Champs personnalisés : jsonb libre, mais on borne la taille. */
-export const customSchema = z
-  .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))
-  .default({});
+/**
+ * Champs personnalisés : jsonb libre, mais on borne la taille.
+ *
+ * Surtout : pas de `.default({})`. Avec un défaut, une modification qui ne
+ * touche pas aux champs personnalisés renvoyait quand même `custom: {}` — et
+ * écrasait donc silencieusement toutes leurs valeurs à chaque édition en ligne.
+ */
+export const customSchema = z.record(
+  z.string(),
+  z.union([z.string(), z.number(), z.boolean(), z.null()]),
+);
 
 export const priorityEnum = z.enum(["low", "normal", "high"]);
 

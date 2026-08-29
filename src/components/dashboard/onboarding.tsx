@@ -64,6 +64,7 @@ export function Onboarding({
   return (
     <section
       aria-label="Premiers pas"
+      data-tour="onboarding"
       className="rounded-lg border bg-card p-5"
     >
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">

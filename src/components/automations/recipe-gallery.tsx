@@ -61,7 +61,7 @@ export function RecipeGallery({ installed }: { installed: Set<string> }) {
   }
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="grid gap-3 sm:grid-cols-2" data-tour="recipes">
       {RECIPES.map((recipe) => {
         const Icon = recipe.icon;
         const already = installed.has(recipe.name);

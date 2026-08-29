@@ -89,6 +89,7 @@ export function ContactsTable({
                   checked={allSelected}
                   indeterminate={someSelected}
                   onCheckedChange={(value) => toggleAll(value === true)}
+                  data-tour="select-all"
                   aria-label="Tout sélectionner"
                 />
               </TableHead>

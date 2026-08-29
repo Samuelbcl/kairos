@@ -31,7 +31,10 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description:
       "Le CRM qui te rappelle tes relances au bon moment, connecté à ton agenda.",
-    ...(brand.faviconUrl ? { icons: { icon: brand.faviconUrl } } : {}),
+    // Toujours passer par `icons`, jamais par un fichier dans app/ :
+    // Next donne la priorité au fichier physique et ignorerait ce réglage,
+    // ce qui rendait l'icône d'onglet d'un espace sans effet.
+    icons: { icon: brand.faviconUrl ?? "/favicon.ico" },
   };
 }
 

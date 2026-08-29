@@ -14,7 +14,7 @@ import { runAutomations } from "@/lib/automations/engine";
 export const dynamic = "force-dynamic";
 
 const FIELDS =
-  "id, name, email, phone, website, sector, address, city, country, size, tags, source, created_at, updated_at";
+  "id, name, email, phone, website, sector, address, city, country, size, tags, source, custom, created_at, updated_at";
 
 export async function GET(request: NextRequest) {
   const auth = await authenticateApiKey(request);

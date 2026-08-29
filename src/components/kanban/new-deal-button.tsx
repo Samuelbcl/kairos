@@ -74,7 +74,7 @@ export function NewDealButton({ stages }: { stages: BoardStage[] }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button>
+          <Button data-tour="action-new-deal">
             <Plus className="size-4" strokeWidth={2} aria-hidden />
             Nouvelle opportunité
           </Button>

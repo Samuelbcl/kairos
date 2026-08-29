@@ -185,6 +185,12 @@ export function ProductTour({
         <h2 className="text-sm font-semibold">{step.title}</h2>
         <p className="mt-1.5 text-sm text-muted-foreground">{step.body}</p>
 
+        {step.action ? (
+          <p className="mt-2.5 rounded-md bg-brand-soft px-2.5 py-1.5 text-xs font-medium text-foreground">
+            {step.action}
+          </p>
+        ) : null}
+
         <div className="mt-4 flex items-center gap-2">
           <div className="flex gap-1" aria-hidden>
             {TOUR_STEPS.map((s, i) => (

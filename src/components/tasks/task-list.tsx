@@ -162,6 +162,7 @@ export function TaskList({
                 type="button"
                 onClick={() => complete(task)}
                 disabled={pending}
+                data-tour="task-complete"
                 aria-label={`Terminer : ${task.title}`}
                 className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border text-transparent transition-colors duration-150 hover:border-success hover:bg-success hover:text-white"
               >
@@ -250,6 +251,7 @@ export function TaskList({
                       <Button
                         variant="ghost"
                         size="icon-xs"
+                        data-tour="task-menu"
                         aria-label="Autres actions"
                       >
                         {pending ? (

@@ -267,6 +267,34 @@ try {
     `limite ${headed.headers.get("x-ratelimit-limit")}, reste ${headed.headers.get("x-ratelimit-remaining")}`,
   );
 
+  // Regression : le schema portait un defaut sur `custom`, si bien que toute
+  // modification renvoyait custom:{} et effacait les champs personnalises.
+  const withCustom = await call("/api/v1/companies", {
+    key: a.apiKey,
+    method: "POST",
+    body: { name: "Sibelga", custom: { bce: "0123456789", type: "public" } },
+  });
+  const customId = withCustom.payload?.data?.id;
+  check(
+    "POST accepte des champs personnalises",
+    withCustom.status === 201 && withCustom.payload?.data?.custom?.bce === "0123456789",
+    `HTTP ${withCustom.status}`,
+  );
+
+  const renamed = await call(`/api/v1/companies/${customId}`, {
+    key: a.apiKey,
+    method: "PATCH",
+    body: { name: "Sibelga SA" },
+  });
+  check(
+    "renommer preserve les champs personnalises",
+    renamed.payload?.data?.name === "Sibelga SA" &&
+      renamed.payload?.data?.custom?.bce === "0123456789" &&
+      renamed.payload?.data?.custom?.type === "public",
+    JSON.stringify(renamed.payload?.data?.custom ?? null),
+  );
+
+
 
   // --- 7. Routes système ----------------------------------------------------
   console.log("\n6. Routes système");

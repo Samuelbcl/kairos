@@ -113,6 +113,7 @@ export function StageHeader({
               type="button"
               onClick={() => canManage && setEditing(true)}
               disabled={!canManage || pending}
+              data-tour="stage-name"
               title={canManage ? "Cliquer pour renommer" : undefined}
               className={cn(
                 "w-full truncate rounded px-1 py-0.5 text-left text-sm font-medium transition-colors duration-150",

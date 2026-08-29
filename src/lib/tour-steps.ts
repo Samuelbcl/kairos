@@ -1,10 +1,14 @@
 /**
  * Contenu de la visite guidée — partagé serveur et client.
  *
- * Chaque étape vise un élément réel de l'interface par son attribut
- * `data-tour`. Une étape dont la cible est absente de la page courante est
- * sautée automatiquement : la visite ne se bloque jamais sur un écran étroit
- * où la barre latérale est masquée.
+ * Parti pris : beaucoup d'étapes courtes plutôt que peu d'étapes denses.
+ * Une bulle qu'on lit en cinq secondes se lit ; un paragraphe se saute.
+ * Chaque bulle nomme un geste précis à faire, pas une fonctionnalité à
+ * comprendre.
+ *
+ * Chaque étape vise un élément réel par son attribut `data-tour`. Une étape
+ * dont la cible est absente est sautée : la visite ne se bloque jamais sur un
+ * écran étroit où la barre latérale est masquée.
  */
 
 export type TourStep = {
@@ -13,6 +17,8 @@ export type TourStep = {
   target?: string;
   title: string;
   body: string;
+  /** Le geste exact à faire, affiché en évidence sous le texte. */
+  action?: string;
   /** Page à ouvrir avant d'afficher l'étape. */
   route?: string;
   /** Côté préféré pour la bulle. */
@@ -22,83 +28,209 @@ export type TourStep = {
 export const TOUR_STEPS: TourStep[] = [
   {
     id: "welcome",
-    title: "Bienvenue dans ton CRM",
-    body: "Deux minutes pour faire le tour. Kairos sert à une chose avant tout : ne jamais rater une relance. Tout le reste est là pour servir ça. Tu peux quitter à tout moment et reprendre depuis les réglages.",
+    title: "Deux minutes, et tu sais tout",
+    body: "Kairos sert à une chose : ne jamais rater une relance. On va voir chaque écran, et surtout ce que tu peux cliquer.",
+    action: "Flèches ← → pour naviguer, Échap pour sortir",
   },
+
+  // --- Se repérer -----------------------------------------------------------
   {
-    id: "dashboard",
+    id: "sidebar",
     target: "nav-dashboard",
     route: "/",
     side: "right",
-    title: "Le tableau de bord",
-    body: "Ton point de départ chaque matin : combien de relances t'attendent, combien tu en as faites cette semaine, ce que vaut ton pipeline, et ton taux de réussite.",
+    title: "La barre de gauche",
+    body: "Tes six écrans. On les passe un par un.",
   },
+  {
+    id: "dashboard-stats",
+    target: "dashboard-stats",
+    route: "/",
+    side: "bottom",
+    title: "Tes chiffres du jour",
+    body: "Relances à faire, faites cette semaine, valeur du pipeline, taux de réussite.",
+    action: "Clique une carte pour aller à l'écran correspondant",
+  },
+  {
+    id: "onboarding",
+    target: "onboarding",
+    route: "/",
+    side: "bottom",
+    title: "Tes trois premiers pas",
+    body: "Ce bloc disparaît une fois les trois faits.",
+    action: "Importer, connecter l'agenda, activer la relance auto",
+  },
+
+  // --- Le cœur : les relances ----------------------------------------------
   {
     id: "today",
     target: "nav-today",
     route: "/today",
     side: "right",
-    title: "Aujourd'hui — l'écran le plus important",
-    body: "Tes relances en retard, celles du jour, celles des sept prochains jours. Coche le rond vert pour en terminer une, ou reporte-la d'un clic. En bas, les opportunités qui dorment depuis plus de deux semaines.",
+    title: "Aujourd'hui",
+    body: "L'écran à ouvrir chaque matin. En retard, aujourd'hui, à venir.",
   },
+  {
+    id: "today-done",
+    target: "task-complete",
+    route: "/today",
+    side: "right",
+    title: "Terminer une relance",
+    body: "Le rond à gauche de chaque ligne.",
+    action: "Un clic : c'est fait, et l'événement quitte ton agenda",
+  },
+  {
+    id: "today-more",
+    target: "task-menu",
+    route: "/today",
+    side: "left",
+    title: "Reporter ou supprimer",
+    body: "Les trois points ouvrent le menu.",
+    action: "Reporter à demain, dans 3 jours, dans 1 semaine",
+  },
+
+  // --- Le calendrier --------------------------------------------------------
   {
     id: "calendar",
     target: "nav-calendar",
     route: "/calendar",
     side: "right",
     title: "Le calendrier",
-    body: "Les mêmes relances, vues mois par mois. Attrape une carte et dépose-la sur un autre jour pour la reporter : l'heure est conservée, et si ton agenda Google est connecté, l'événement suit tout seul.",
+    body: "Les mêmes relances, vues mois par mois.",
+    action: "Attrape une carte et dépose-la sur un autre jour",
   },
+
+  // --- Le pipeline ----------------------------------------------------------
   {
     id: "pipeline",
     target: "nav-pipeline",
     route: "/pipeline",
     side: "right",
     title: "Le pipeline",
-    body: "Tes opportunités, colonne par colonne. Fais glisser une carte pour la faire avancer. Clique sur le nom d'une colonne pour la renommer, sur la pastille de couleur pour la changer — c'est ton pipeline, pas le mien.",
+    body: "Tes opportunités, colonne par colonne.",
+    action: "Fais glisser une carte pour la faire avancer",
   },
+  {
+    id: "pipeline-rename",
+    target: "stage-name",
+    route: "/pipeline",
+    side: "bottom",
+    title: "Renommer une colonne",
+    body: "Les étapes sont les tiennes, pas les miennes.",
+    action: "Clique sur le nom pour le changer, sur la pastille pour la couleur",
+  },
+  {
+    id: "pipeline-new",
+    target: "action-new-deal",
+    route: "/pipeline",
+    side: "bottom",
+    title: "Ajouter une opportunité",
+    body: "Titre, entreprise, montant, étape de départ.",
+  },
+
+  // --- Les contacts ---------------------------------------------------------
   {
     id: "contacts",
     target: "nav-contacts",
     route: "/contacts",
     side: "right",
     title: "Contacts",
-    body: "Tes entreprises d'un côté, les personnes de l'autre. Coche plusieurs lignes pour agir en masse : ajouter un tag, créer des opportunités, supprimer. Rien n'est perdu, tout part à la corbeille pour trente jours.",
+    body: "Tes entreprises d'un côté, les personnes de l'autre.",
+    action: "Les deux onglets, juste au-dessus de la liste",
   },
   {
-    id: "import",
+    id: "contacts-select",
+    target: "select-all",
+    route: "/contacts",
+    side: "bottom",
+    title: "Agir sur plusieurs fiches",
+    body: "Coche des lignes : une barre d'actions apparaît en bas.",
+    action: "Taguer, créer des opportunités, supprimer — d'un coup",
+  },
+  {
+    id: "contacts-import",
     target: "action-import",
     route: "/contacts",
     side: "bottom",
     title: "Reprendre ton tableur",
-    body: "Dépose ton fichier Excel ou CSV : les colonnes sont reconnues toutes seules, les doublons écartés. Tu peux même créer une opportunité par ligne pour retrouver tout ton fichier dans le pipeline.",
+    body: "Excel ou CSV. Les colonnes sont reconnues toutes seules.",
+    action: "Dépose ton fichier, vérifie, importe",
   },
+  {
+    id: "fiche",
+    route: "/contacts",
+    title: "Modifier une fiche",
+    body: "Ouvre une entreprise en cliquant son nom. Sur sa fiche, presque tout se modifie au clic — y compris le grand titre.",
+    action: "Un petit crayon signale ce qui est modifiable",
+  },
+
+  // --- Le geste à prendre ---------------------------------------------------
   {
     id: "search",
     target: "quick-add",
     side: "bottom",
-    title: "La barre de recherche — ⌘K",
-    body: "Le raccourci le plus utile. Appuie sur ⌘K (ou Ctrl+K) depuis n'importe où : tu cherches une entreprise, un contact, une opportunité, ou tu en crées une en tapant son nom. C'est le geste à prendre.",
+    title: "⌘K — le raccourci à retenir",
+    body: "Depuis n'importe où : chercher, ou créer en tapant un nom.",
+    action: "Essaie maintenant : ⌘K, ou Ctrl+K sous Windows",
   },
+
+  // --- Automatiser ----------------------------------------------------------
   {
     id: "automations",
     target: "nav-automations",
     route: "/automations",
     side: "right",
     title: "Les automatisations",
-    body: "« Quand un prospect passe en Contacté, crée une relance à J+5 et pose-la dans mon agenda. » Quatre recettes s'activent en un clic, et tu peux composer les tiennes en langage courant, sans écrire une ligne.",
+    body: "« Quand un prospect passe en Contacté, crée une relance à J+5. »",
   },
+  {
+    id: "recipes",
+    target: "recipes",
+    route: "/automations",
+    side: "top",
+    title: "Quatre recettes toutes faites",
+    body: "Rien à configurer. La première est la plus utile.",
+    action: "Clique « Activer » sur la relance systématique",
+  },
+
+  // --- Personnaliser --------------------------------------------------------
   {
     id: "settings",
     target: "nav-settings",
     route: "/settings/workspace",
     side: "right",
     title: "Les réglages",
-    body: "Tes couleurs et ton logo, les étapes du pipeline, les tags, les champs sur mesure, tes modèles d'e-mail, la connexion à ton agenda, les clés API, et la corbeille. Tout se personnalise ici.",
+    body: "Sept onglets : espace, membres, e-mails, intégrations, API, corbeille.",
   },
   {
+    id: "branding",
+    target: "branding",
+    route: "/settings/workspace",
+    side: "bottom",
+    title: "Tes couleurs, ton logo",
+    body: "Change la couleur d'accent : toute l'interface suit.",
+    action: "L'aperçu se met à jour pendant que tu choisis",
+  },
+  {
+    id: "integrations",
+    target: "nav-settings",
+    route: "/settings/integrations",
+    side: "right",
+    title: "Connecter ton agenda",
+    body: "C'est ce qui transforme une relance en vrai rappel.",
+    action: "Onglet Intégrations → Connecter Google Agenda",
+  },
+  {
+    id: "trash",
+    route: "/settings/trash",
+    title: "Rien n'est jamais perdu",
+    body: "Tout ce que tu supprimes reste trente jours dans la corbeille.",
+    action: "Réglages → Corbeille → Restaurer",
+  },
+
+  {
     id: "done",
-    title: "C'est à toi",
-    body: "Commence par importer ton fichier, connecte ton agenda, puis active la relance automatique — les trois cartes du tableau de bord t'y emmènent. Pour revoir cette visite : Réglages → Espace, tout en bas.",
+    title: "À toi de jouer",
+    body: "Commence par importer ton fichier. Pour revoir cette visite : Réglages → Espace, tout en bas.",
   },
 ];

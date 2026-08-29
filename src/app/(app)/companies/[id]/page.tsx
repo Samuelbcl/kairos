@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Timeline, type TimelineEntry } from "@/components/contacts/timeline";
 import { CompanyFields } from "@/components/contacts/company-fields";
+import { CompanyTitle } from "@/components/contacts/company-title";
 import { CompanyNotes } from "@/components/contacts/company-notes";
 import { TaskPanel } from "@/components/tasks/task-panel";
 import { NewContactButton } from "@/components/contacts/new-contact-button";
@@ -117,9 +118,7 @@ export default async function CompanyPage(props: PageProps<"/companies/[id]">) {
             />
           </span>
           <div className="min-w-0">
-            <h1 className="truncate text-xl font-semibold tracking-tight">
-              {company.name}
-            </h1>
+            <CompanyTitle id={company.id} name={company.name} />
             <p className="mt-0.5 text-sm text-muted-foreground">
               {[company.sector, company.city].filter(Boolean).join(" · ") ||
                 "Aucun secteur renseigné"}

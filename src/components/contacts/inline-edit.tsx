@@ -123,6 +123,7 @@ export function InlineEdit({
         <button
           type="button"
           onClick={() => setEditing(true)}
+          title={`Cliquer pour modifier : ${label}`}
           className={cn(
             "group flex min-h-8 w-full items-center gap-2 rounded-md px-2 py-1 text-left text-sm transition-colors duration-150 hover:bg-accent",
             !current && "text-muted-foreground",
@@ -135,7 +136,7 @@ export function InlineEdit({
             <Loader2 className="size-3.5 shrink-0 animate-spin text-muted-foreground" aria-hidden />
           ) : (
             <Pencil
-              className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+              className="size-3.5 shrink-0 text-muted-foreground opacity-30 transition-opacity duration-150 group-hover:opacity-100"
               strokeWidth={1.75}
               aria-hidden
             />
