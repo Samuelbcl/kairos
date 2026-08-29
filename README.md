@@ -101,3 +101,38 @@ Ensuite tu ouvres `CLAUDE.md` dans VS Code et tu demandes à Claude Code d'attaq
 ## Principe de travail
 
 Ce dossier est fait pour être **déroulé phase par phase** par Claude Code. On ne code pas tout d'un coup : chaque phase de `ROADMAP.md` a un critère de fin clair (« ça tourne, c'est déployé, on passe à la suite »). Mindset indie hacker solo : livrable vite, zéro sur-ingénierie, on itère.
+
+## Tâches planifiées
+
+Un seul cron est déclaré dans `vercel.json` : `/api/cron/run`, qui appelle les
+six travaux à la suite. Le plan Hobby de Vercel n'autorise que deux crons, une
+fois par jour — en déclarer davantage fait **rejeter le déploiement entier**.
+
+| Travail | Rôle |
+|---|---|
+| `reminders` | Envoie les rappels dus, déclenche `task.overdue` et `deal.stale` |
+| `sync-calendar` | Pousse vers l'agenda les relances créées sans session (API, automatisations) |
+| `pull-calendar` | Reporte dans Kairos les événements déplacés depuis l'agenda |
+| `retry-webhooks` | Retente les livraisons en échec, à délai croissant |
+| `refresh-tokens` | Rafraîchit les jetons OAuth proches de l'expiration |
+| `purge` | Efface définitivement la corbeille au-delà de trente jours |
+
+Chaque route reste appelable seule, pour un déclenchement manuel :
+
+```bash
+curl "https://ton-url.vercel.app/api/cron/reminders?secret=$CRON_SECRET"
+```
+
+**Sur un plan Pro**, remplace l'entrée unique par des planifications fines —
+les rappels toutes les heures ont plus de valeur qu'une fois par jour :
+
+```json
+"crons": [
+  { "path": "/api/cron/reminders",      "schedule": "0 * * * *" },
+  { "path": "/api/cron/sync-calendar",  "schedule": "20 * * * *" },
+  { "path": "/api/cron/pull-calendar",  "schedule": "40 * * * *" },
+  { "path": "/api/cron/retry-webhooks", "schedule": "*/15 * * * *" },
+  { "path": "/api/cron/refresh-tokens", "schedule": "0 */6 * * *" },
+  { "path": "/api/cron/purge",          "schedule": "0 4 * * *" }
+]
+```

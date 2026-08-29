@@ -288,6 +288,15 @@ try {
     const allowed = await call(`/api/cron/${route}?secret=${env.CRON_SECRET}`);
     check(`cron ${route} repond avec le bon secret`, allowed.status === 200, `HTTP ${allowed.status}`);
   }
+
+  const runGuarded = await call("/api/cron/run");
+  check("cron run refuse sans secret", runGuarded.status === 401, `HTTP ${runGuarded.status}`);
+  const runOk = await call(`/api/cron/run?secret=${env.CRON_SECRET}`);
+  check(
+    "cron run enchaine les six travaux",
+    runOk.status === 200 && Object.keys(runOk.payload?.jobs ?? {}).length === 6,
+    `HTTP ${runOk.status}, ${Object.keys(runOk.payload?.jobs ?? {}).length} travaux`,
+  );
 } catch (error) {
   console.error(`\nInterrompu : ${error.message}`);
   process.exitCode = 1;
