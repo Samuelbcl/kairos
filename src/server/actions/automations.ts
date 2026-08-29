@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireWorkspace } from "@/lib/workspace";
+import { checkQuota } from "@/lib/plans";
 import { firstIssue } from "@/lib/validators/common";
 import { fail, ok, pgError, type ActionResult } from "@/server/actions/types";
 import {
@@ -48,6 +49,12 @@ export async function saveAutomation(
   const workspace = await requireWorkspace();
   const supabase = await createClient();
   const { id, ...rule } = parsed.data;
+
+  // Seule une règle nouvelle et active consomme du quota.
+  if (!id && rule.enabled) {
+    const quota = await checkQuota(supabase, workspace.id, "automations");
+    if (!quota.allowed) return fail(quota.reason);
+  }
 
   const row = {
     workspace_id: workspace.id,

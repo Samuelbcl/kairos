@@ -344,3 +344,100 @@ export async function deleteTaskEvent(
 
   return { deleted: true };
 }
+
+// --- Sens retour : agenda → Kairos ------------------------------------------
+
+/**
+ * Relit les événements liés à des relances et reporte les déplacements faits
+ * dans l'agenda.
+ *
+ * Volontairement limité : on ne synchronise que l'heure d'un événement que
+ * Kairos a lui-même créé, jamais la création ni la suppression. C'est ce qui
+ * évite les doublons et les boucles qui rendent la synchronisation
+ * bidirectionnelle si pénible — et ça couvre le cas réel, celui où on déplace
+ * un rendez-vous depuis son téléphone.
+ */
+export async function pullCalendarChanges(
+  supabase: Client,
+  workspaceId: string,
+  integration: Integration,
+): Promise<{ updated: number; checked: number }> {
+  const { data: tasks } = await supabase
+    .from("tasks")
+    .select("id, due_at, remind_at, external_event_id, calendar_synced_at")
+    .eq("workspace_id", workspaceId)
+    .eq("done", false)
+    .eq("calendar_provider", integration.provider)
+    .not("external_event_id", "is", null)
+    .gte("due_at", new Date(Date.now() - 7 * 86_400_000).toISOString())
+    .limit(200);
+
+  let updated = 0;
+
+  for (const task of tasks ?? []) {
+    if (!task.external_event_id) continue;
+
+    try {
+      const response =
+        integration.provider === "google"
+          ? await googleRequest(
+              integration,
+              `/events/${encodeURIComponent(task.external_event_id)}`,
+            )
+          : await graphRequest(
+              integration,
+              `/events/${encodeURIComponent(task.external_event_id)}`,
+            );
+
+      // Événement supprimé côté agenda : on délie sans supprimer la relance.
+      if (response.status === 404 || response.status === 410) {
+        await supabase
+          .from("tasks")
+          .update({
+            calendar_provider: null,
+            external_event_id: null,
+            calendar_synced_at: null,
+          })
+          .eq("id", task.id);
+        continue;
+      }
+
+      const event = await response.json();
+      const remoteStart: string | undefined =
+        integration.provider === "google"
+          ? event?.start?.dateTime
+          : event?.start?.dateTime
+            ? `${event.start.dateTime}Z`.replace(/Z+$/, "Z")
+            : undefined;
+
+      if (!remoteStart) continue;
+
+      const remote = new Date(remoteStart);
+      const local = new Date(task.due_at);
+      // Une minute de tolérance : les fournisseurs arrondissent les secondes.
+      if (Math.abs(remote.getTime() - local.getTime()) < 60_000) continue;
+
+      const shift = remote.getTime() - local.getTime();
+
+      await supabase
+        .from("tasks")
+        .update({
+          due_at: remote.toISOString(),
+          remind_at: task.remind_at
+            ? new Date(new Date(task.remind_at).getTime() + shift).toISOString()
+            : null,
+          calendar_synced_at: new Date().toISOString(),
+        })
+        .eq("id", task.id);
+
+      updated += 1;
+    } catch (error) {
+      console.error(
+        "[calendar] relecture d'un evenement impossible",
+        error instanceof Error ? error.message : "erreur inconnue",
+      );
+    }
+  }
+
+  return { updated, checked: tasks?.length ?? 0 };
+}

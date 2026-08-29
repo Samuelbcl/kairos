@@ -192,6 +192,7 @@ try {
     ["/settings/api", "Clés API"],
     ["/settings/emails", "Modèles"],
     ["/calendar", "Calendrier"],
+    ["/settings/trash", "Corbeille"],
   ];
 
   for (const [path, marker] of pages) {

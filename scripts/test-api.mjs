@@ -281,6 +281,13 @@ try {
 
   const refreshOk = await call(`/api/cron/refresh-tokens?secret=${env.CRON_SECRET}`);
   check("refresh-tokens avec le bon secret → 200", refreshOk.status === 200);
+
+  for (const route of ["sync-calendar", "retry-webhooks", "pull-calendar", "purge"]) {
+    const guarded = await call(`/api/cron/${route}`);
+    check(`cron ${route} refuse sans secret`, guarded.status === 401, `HTTP ${guarded.status}`);
+    const allowed = await call(`/api/cron/${route}?secret=${env.CRON_SECRET}`);
+    check(`cron ${route} repond avec le bon secret`, allowed.status === 200, `HTTP ${allowed.status}`);
+  }
 } catch (error) {
   console.error(`\nInterrompu : ${error.message}`);
   process.exitCode = 1;

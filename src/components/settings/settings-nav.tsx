@@ -10,6 +10,7 @@ const tabs = [
   { href: "/settings/emails", label: "E-mails" },
   { href: "/settings/integrations", label: "Intégrations" },
   { href: "/settings/api", label: "API & webhooks" },
+  { href: "/settings/trash", label: "Corbeille" },
 ];
 
 export function SettingsNav() {

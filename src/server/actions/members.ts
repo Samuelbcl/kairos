@@ -6,7 +6,8 @@ import { createClient, getUser } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { env } from "@/lib/env";
 import { requireWorkspace } from "@/lib/workspace";
-import type { ActionResult } from "@/server/actions/workspace";
+import { checkQuota } from "@/lib/plans";
+import { fail, type ActionResult } from "@/server/actions/types";
 
 const roleSchema = z.enum(["owner", "admin", "member"]);
 
@@ -48,6 +49,11 @@ export async function inviteMember(
   }
 
   const { email, role } = parsed.data;
+
+  const supabaseForQuota = await createClient();
+  const quota = await checkQuota(supabaseForQuota, workspace.id, "members");
+  if (!quota.allowed) return fail(quota.reason);
+
   const admin = createAdminClient();
 
   // La personne a-t-elle déjà un compte ?

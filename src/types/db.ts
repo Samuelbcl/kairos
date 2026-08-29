@@ -682,6 +682,36 @@ export type Database = {
           },
         ]
       }
+      plans: {
+        Row: {
+          id: string
+          max_automations: number | null
+          max_companies: number | null
+          max_members: number | null
+          name: string
+          position: number
+          price_eur: number
+        }
+        Insert: {
+          id: string
+          max_automations?: number | null
+          max_companies?: number | null
+          max_members?: number | null
+          name: string
+          position?: number
+          price_eur?: number
+        }
+        Update: {
+          id?: string
+          max_automations?: number | null
+          max_companies?: number | null
+          max_members?: number | null
+          name?: string
+          position?: number
+          price_eur?: number
+        }
+        Relationships: []
+      }
       platform_admins: {
         Row: {
           created_at: string
@@ -1049,6 +1079,35 @@ export type Database = {
           },
         ]
       }
+      workspace_domains: {
+        Row: {
+          created_at: string
+          host: string
+          verified_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          host: string
+          verified_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          host?: string
+          verified_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_domains_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspace_members: {
         Row: {
           created_at: string
@@ -1093,6 +1152,7 @@ export type Database = {
           id: string
           name: string
           plan: string
+          plan_id: string | null
           slug: string
           timezone: string
           updated_at: string
@@ -1104,6 +1164,7 @@ export type Database = {
           id?: string
           name: string
           plan?: string
+          plan_id?: string | null
           slug: string
           timezone?: string
           updated_at?: string
@@ -1115,6 +1176,7 @@ export type Database = {
           id?: string
           name?: string
           plan?: string
+          plan_id?: string | null
           slug?: string
           timezone?: string
           updated_at?: string
@@ -1125,6 +1187,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workspaces_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
             referencedColumns: ["id"]
           },
         ]
@@ -1149,6 +1218,16 @@ export type Database = {
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       sync_workspace_tags: { Args: { ws: string }; Returns: number }
+      workspace_for_host: { Args: { candidate: string }; Returns: string }
+      workspace_usage: {
+        Args: { ws: string }
+        Returns: {
+          automations: number
+          companies: number
+          members: number
+          tasks_open: number
+        }[]
+      }
     }
     Enums: {
       activity_type:

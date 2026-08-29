@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireWorkspace } from "@/lib/workspace";
+import { checkQuota } from "@/lib/plans";
 import { logActivity } from "@/lib/activities";
 import { firstIssue } from "@/lib/validators/common";
 import { companyCreateSchema, companyUpdateSchema } from "@/lib/validators/company";
@@ -17,6 +18,9 @@ export async function createCompany(
 
   const workspace = await requireWorkspace();
   const supabase = await createClient();
+
+  const quota = await checkQuota(supabase, workspace.id, "companies");
+  if (!quota.allowed) return fail(quota.reason);
 
   const { data, error } = await supabase
     .from("companies")

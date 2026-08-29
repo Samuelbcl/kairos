@@ -45,6 +45,22 @@ export async function GET(request: NextRequest) {
     report.errors += 1;
   }
 
+  // Nom de marque par espace, résolu une fois : un rappel signé « Kairos »
+  // chez un client en marque blanche trahit l'éditeur au premier message.
+  const brandNames = new Map<string, string>();
+  async function brandFor(workspaceId: string) {
+    if (!brandNames.has(workspaceId)) {
+      const { data } = await admin
+        .from("workspaces")
+        .select("name, branding")
+        .eq("id", workspaceId)
+        .single();
+      const branding = (data?.branding ?? {}) as { brand_name?: string };
+      brandNames.set(workspaceId, branding.brand_name || data?.name || "Kairos");
+    }
+    return brandNames.get(workspaceId) ?? "Kairos";
+  }
+
   for (const task of dueReminders ?? []) {
     report.reminders += 1;
 
@@ -54,6 +70,8 @@ export async function GET(request: NextRequest) {
     const to = profile.user?.email;
     if (!to) continue;
 
+    const brand = await brandFor(task.workspace_id);
+
     const result = await sendEmail({
       to,
       subject: `Rappel : ${task.title}`,
@@ -62,7 +80,7 @@ export async function GET(request: NextRequest) {
         task.companies?.name ? `Entreprise : ${task.companies.name}` : null,
         `Échéance : ${new Date(task.due_at).toLocaleString("fr-BE", { timeZone: "Europe/Brussels" })}`,
         "",
-        `Ouvrir dans Kairos : ${env.appUrl}/today`,
+        `Ouvrir dans ${brand} : ${env.appUrl}/today`,
       ]
         .filter(Boolean)
         .join("\n"),
