@@ -3,7 +3,15 @@ import { createServerClient } from "@supabase/ssr";
 import { isSupabaseConfigured } from "@/lib/env";
 
 /** Routes accessibles sans être connecté. */
-const PUBLIC_PATHS = ["/login", "/auth", "/setup"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/auth",
+  "/setup",
+  // Lisibles sans compte : Google exige une politique de confidentialité
+  // atteignable pour autoriser un client OAuth.
+  "/confidentialite",
+  "/conditions",
+];
 
 function isPublic(pathname: string) {
   return PUBLIC_PATHS.some(

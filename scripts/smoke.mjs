@@ -195,6 +195,20 @@ try {
     ["/settings/trash", "Corbeille"],
   ];
 
+  // Sans cookie : Google doit pouvoir atteindre ces pages, et un prospect aussi.
+  for (const [path, marker] of [
+    ["/confidentialite", "Règles de confidentialité"],
+    ["/conditions", "Conditions d'utilisation"],
+  ]) {
+    const response = await fetch(`${BASE_URL}${path}`, { redirect: "manual" });
+    const body = await response.text();
+    check(
+      `GET ${path} sans compte`,
+      response.status === 200 && body.includes(marker),
+      response.status !== 200 ? `HTTP ${response.status}` : "",
+    );
+  }
+
   for (const [path, marker] of pages) {
     let status = 0;
     let body = "";
