@@ -19,7 +19,8 @@
     "test:tags": "node scripts/test-tags.mjs",
     "db:migrate": "node scripts/migrate.mjs",
     "check:deploy": "node scripts/check-deploy.mjs",
-    "verify": "npm run check:boundaries && npm run check:deploy && npm run typecheck && npm run lint && npm run build"
+    "verify": "npm run check:boundaries && npm run check:deploy && npm run typecheck && npm run lint && npm run build",
+    "check:google": "node scripts/check-google.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
