@@ -71,7 +71,7 @@ export function CompanyFields({
       <InlineEdit label="Secteur" field="sector" value={company.sector} onSave={save} />
       <InlineEdit label="Adresse" field="address" value={company.address} onSave={save} />
       <InlineEdit label="Ville" field="city" value={company.city} onSave={save} />
-      <InlineEdit label="Taille" field="size" value={company.size} onSave={save} placeholder="1-10, 11-50…" />
+      <InlineEdit label="Taille" field="size" value={company.size} onSave={save} />
       <InlineEdit
         label="Tags"
         field="tags"

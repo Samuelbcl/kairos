@@ -3,7 +3,7 @@ import { Building2, Upload, User } from "lucide-react";
 import { PageHeader } from "@/components/shell/page-header";
 import { EmptyState } from "@/components/shell/empty-state";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { TagBadge } from "@/components/contacts/tag-badge";
 import {
   Table,
   TableBody,
@@ -116,6 +116,7 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
     people = data ?? [];
   }
 
+  const tagColors = new Map((tagRows ?? []).map((t) => [t.name, t.color]));
   const isFiltered = Boolean(query || tag);
 
   return (
@@ -198,13 +199,12 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
                       {company.tags.length ? (
                         <span className="mt-1 flex flex-wrap gap-1">
                           {company.tags.map((t) => (
-                            <Badge
+                            <TagBadge
                               key={t}
-                              variant="secondary"
+                              name={t}
+                              color={tagColors.get(t)}
                               className="text-[10px]"
-                            >
-                              {t}
-                            </Badge>
+                            />
                           ))}
                         </span>
                       ) : null}

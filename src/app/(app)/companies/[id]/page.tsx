@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Building2, Plus, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { TagBadge } from "@/components/contacts/tag-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Timeline, type TimelineEntry } from "@/components/contacts/timeline";
@@ -73,6 +74,12 @@ export default async function CompanyPage(props: PageProps<"/companies/[id]">) {
       .order("due_at"),
   ]);
 
+  const { data: tagRows } = await supabase
+    .from("tags")
+    .select("name, color")
+    .eq("workspace_id", workspace.id);
+  const tagColors = new Map((tagRows ?? []).map((t) => [t.name, t.color]));
+
   const { data: customFields } = await supabase
     .from("custom_fields")
     .select("id, entity, key, label, type, options")
@@ -120,9 +127,7 @@ export default async function CompanyPage(props: PageProps<"/companies/[id]">) {
             {company.tags.length ? (
               <div className="mt-2 flex flex-wrap gap-1">
                 {company.tags.map((tag) => (
-                  <Badge key={tag} variant="secondary">
-                    {tag}
-                  </Badge>
+                  <TagBadge key={tag} name={tag} color={tagColors.get(tag)} />
                 ))}
               </div>
             ) : null}

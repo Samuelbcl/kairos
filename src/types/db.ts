@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -928,10 +928,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_workspace_tag: {
+        Args: { tag_name: string; ws: string }
+        Returns: undefined
+      }
       is_workspace_admin: { Args: { ws: string }; Returns: boolean }
       is_workspace_member: { Args: { ws: string }; Returns: boolean }
+      rename_workspace_tag: {
+        Args: { new_name: string; old_name: string; ws: string }
+        Returns: undefined
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      sync_workspace_tags: { Args: { ws: string }; Returns: number }
     }
     Enums: {
       activity_type:

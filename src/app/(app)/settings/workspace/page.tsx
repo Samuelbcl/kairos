@@ -3,6 +3,7 @@ import { EmptyState } from "@/components/shell/empty-state";
 import { Settings } from "lucide-react";
 import { BrandingPanel } from "@/components/settings/branding-panel";
 import { StagesPanel } from "@/components/settings/stages-panel";
+import { TagsPanel, type WorkspaceTag } from "@/components/settings/tags-panel";
 import { CustomFieldsPanel } from "@/components/settings/custom-fields-panel";
 import { DataPanel } from "@/components/settings/data-panel";
 import { createClient } from "@/lib/supabase/server";
@@ -27,7 +28,8 @@ export default async function WorkspaceSettingsPage() {
 
   const supabase = await createClient();
 
-  const [{ data: stages }, { data: fields }] = await Promise.all([
+  const [{ data: stages }, { data: fields }, { data: tagRows }, { data: taggedCompanies }, { data: taggedContacts }] =
+    await Promise.all([
     supabase
       .from("stages")
       .select("id, name, color, position, probability, is_won, is_lost")
@@ -39,7 +41,26 @@ export default async function WorkspaceSettingsPage() {
       .eq("workspace_id", workspace.id)
       .order("entity")
       .order("position"),
+    supabase
+      .from("tags")
+      .select("name, color")
+      .eq("workspace_id", workspace.id)
+      .order("name"),
+    supabase.from("companies").select("tags").eq("workspace_id", workspace.id),
+    supabase.from("contacts").select("tags").eq("workspace_id", workspace.id),
   ]);
+
+  // Combien de fiches portent chaque tag : indispensable avant d'en supprimer un.
+  const usage: Record<string, number> = {};
+  for (const row of [...(taggedCompanies ?? []), ...(taggedContacts ?? [])]) {
+    for (const tag of row.tags ?? []) usage[tag] = (usage[tag] ?? 0) + 1;
+  }
+
+  const tags: WorkspaceTag[] = (tagRows ?? []).map((tag) => ({
+    name: tag.name,
+    color: tag.color,
+    usage: usage[tag.name] ?? 0,
+  }));
 
   const canManage = workspace.role !== "member";
 
@@ -59,6 +80,8 @@ export default async function WorkspaceSettingsPage() {
         />
 
         <StagesPanel stages={stages ?? []} canManage={canManage} />
+
+        <TagsPanel tags={tags} canManage={canManage} />
 
         <CustomFieldsPanel
           fields={(fields ?? []).map((f) => ({
