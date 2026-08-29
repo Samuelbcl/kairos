@@ -7,8 +7,22 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
-const MAX_BYTES = 2 * 1024 * 1024;
-const ACCEPTED = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
+/** Ce qu'on accepte en entrée. Ce qui est stocké est toujours plus léger :
+ *  tout est recompressé dans le navigateur, sauf les formats vectoriels. */
+const MAX_INPUT_BYTES = 8 * 1024 * 1024;
+const ACCEPTED = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/svg+xml",
+  "image/gif",
+  "image/avif",
+  "image/x-icon",
+  "image/vnd.microsoft.icon",
+];
+
+/** Formats laissés intacts : les passer par un canvas les dégraderait. */
+const PASSTHROUGH = ["image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon"];
 
 /**
  * Envoi d'image vers Supabase Storage, cloisonné par espace.
@@ -24,24 +38,28 @@ export function ImageUpload({
   onChange,
   label,
   shape = "square",
+  size = 512,
+  hint,
   disabled,
 }: {
   workspaceId: string;
-  /** Sous-dossier : logo, avatars, contacts… */
+  /** Sous-dossier : logo, favicon, avatars, contacts… */
   folder: string;
   value: string | null;
   onChange: (url: string | null) => void | Promise<void>;
   label: string;
   shape?: "square" | "circle";
+  /** Côté le plus long après redimensionnement. */
+  size?: number;
+  hint?: string;
   disabled?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   /** Réduit au plus long côté demandé, en conservant les proportions. */
-  async function shrink(file: File, max = 512): Promise<Blob> {
-    // Un SVG est déjà vectoriel : le passer par un canvas le dégraderait.
-    if (file.type === "image/svg+xml") return file;
+  async function shrink(file: File, max: number): Promise<Blob> {
+    if (PASSTHROUGH.includes(file.type)) return file;
 
     const bitmap = await createImageBitmap(file);
     const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
@@ -69,17 +87,19 @@ export function ImageUpload({
       });
       return;
     }
-    if (file.size > MAX_BYTES * 4) {
+    if (file.size > MAX_INPUT_BYTES) {
       toast.error("Fichier trop lourd", {
-        description: "Au-delà de 8 Mo, réduis l'image avant de l'envoyer.",
+        description: `Maximum 8 Mo. Le tien fait ${(file.size / 1024 / 1024).toFixed(1)} Mo.`,
       });
       return;
     }
 
     setBusy(true);
     try {
-      const blob = await shrink(file);
-      const extension = file.type === "image/svg+xml" ? "svg" : "webp";
+      const blob = await shrink(file, size);
+      const extension = PASSTHROUGH.includes(file.type)
+        ? (file.name.split(".").pop() ?? "png").toLowerCase()
+        : "webp";
       // Nom unique : remplacer un fichier au même chemin laisserait l'ancienne
       // image en cache chez tous ceux qui l'avaient déjà vue.
       const path = `${workspaceId}/${folder}/${crypto.randomUUID()}.${extension}`;
@@ -162,7 +182,7 @@ export function ImageUpload({
         </div>
 
         <span className="text-xs text-muted-foreground">
-          PNG, JPEG, WebP ou SVG. Redimensionnée automatiquement.
+          {hint ?? "PNG, JPEG, WebP, SVG ou ICO. Redimensionnée automatiquement."}
         </span>
       </div>
 

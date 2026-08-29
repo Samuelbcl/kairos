@@ -279,6 +279,7 @@ export function QuickAddTrigger() {
   return (
     <button
       type="button"
+      data-tour="quick-add"
       onClick={() =>
         document.dispatchEvent(
           new KeyboardEvent("keydown", {

@@ -6,7 +6,8 @@ import { StagesPanel } from "@/components/settings/stages-panel";
 import { TagsPanel, type WorkspaceTag } from "@/components/settings/tags-panel";
 import { CustomFieldsPanel } from "@/components/settings/custom-fields-panel";
 import { DataPanel } from "@/components/settings/data-panel";
-import { createClient } from "@/lib/supabase/server";
+import { TourPanel } from "@/components/settings/tour-panel";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { getCurrentWorkspace } from "@/lib/workspace";
 
 export const metadata = { title: "Réglages de l'espace" };
@@ -27,6 +28,7 @@ export default async function WorkspaceSettingsPage() {
   }
 
   const supabase = await createClient();
+  const user = await getUser();
 
   const [{ data: stages }, { data: fields }, { data: tagRows }, { data: taggedCompanies }, { data: taggedContacts }] =
     await Promise.all([
@@ -62,6 +64,14 @@ export default async function WorkspaceSettingsPage() {
     usage: usage[tag.name] ?? 0,
   }));
 
+  const { data: profile } = user
+    ? await supabase
+        .from("profiles")
+        .select("tour_completed_at")
+        .eq("id", user.id)
+        .single()
+    : { data: null };
+
   const canManage = workspace.role !== "member";
 
   return (
@@ -95,6 +105,8 @@ export default async function WorkspaceSettingsPage() {
           }))}
           canManage={canManage}
         />
+
+        <TourPanel completedAt={profile?.tour_completed_at ?? null} />
 
         <DataPanel workspaceName={workspace.name} isOwner={workspace.role === "owner"} />
       </div>

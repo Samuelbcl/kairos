@@ -20,6 +20,7 @@ export type HostBrand = {
   workspaceId: string | null;
   brandName: string;
   logoUrl: string | null;
+  faviconUrl: string | null;
   accent: string | null;
   radius: string | null;
 };
@@ -28,6 +29,7 @@ const DEFAULT_BRAND: HostBrand = {
   workspaceId: null,
   brandName: "Kairos",
   logoUrl: null,
+  faviconUrl: null,
   accent: null,
   radius: null,
 };
@@ -63,6 +65,7 @@ export const getHostBranding = cache(async (): Promise<HostBrand> => {
       workspaceId: workspace.id,
       brandName: branding.brand_name || workspace.name,
       logoUrl: branding.logo_url ?? null,
+      faviconUrl: branding.favicon_url ?? null,
       accent: branding.accent ?? null,
       radius: branding.radius ?? null,
     };

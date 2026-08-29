@@ -67,6 +67,7 @@ export function BrandingPanel({
   const [accent, setAccent] = useState(branding.accent ?? "#4F46E5");
   const [radius, setRadius] = useState(branding.radius ?? "0.75rem");
   const [logoUrl, setLogoUrl] = useState(branding.logo_url ?? "");
+  const [faviconUrl, setFaviconUrl] = useState(branding.favicon_url ?? "");
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -85,6 +86,7 @@ export function BrandingPanel({
           accent,
           radius,
           logo_url: logoUrl,
+          favicon_url: faviconUrl,
         }),
         updateWorkspace({ name, timezone: tz }),
       ]);
@@ -151,7 +153,7 @@ export function BrandingPanel({
             </Select>
           </div>
 
-          <div className="flex flex-col gap-1.5 sm:col-span-2">
+          <div className="flex flex-col gap-1.5">
             <Label>Logo</Label>
             <ImageUpload
               workspaceId={workspaceId}
@@ -159,6 +161,21 @@ export function BrandingPanel({
               value={logoUrl || null}
               onChange={(url) => setLogoUrl(url ?? "")}
               label="Logo de l'espace"
+              hint="Affiché sur la page de connexion. PNG, JPEG, WebP ou SVG."
+              disabled={!canManage || pending}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label>Icône d&apos;onglet</Label>
+            <ImageUpload
+              workspaceId={workspaceId}
+              folder="favicon"
+              value={faviconUrl || null}
+              onChange={(url) => setFaviconUrl(url ?? "")}
+              label="Icône d'onglet"
+              size={64}
+              hint="La petite image de l'onglet du navigateur. Carrée, 64 px suffisent."
               disabled={!canManage || pending}
             />
           </div>

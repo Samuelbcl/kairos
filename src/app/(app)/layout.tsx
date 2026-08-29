@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/shell/sidebar";
 import { Topbar } from "@/components/shell/topbar";
 import { ThemeProvider } from "@/components/shell/theme-provider";
+import { ProductTour } from "@/components/tour/product-tour";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createClient, getUser } from "@/lib/supabase/server";
 import {
@@ -22,6 +23,14 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
     getWorkspaces(),
     supabase.rpc("is_platform_admin"),
   ]);
+
+  // Visite guidée : lancée d'elle-même tant qu'elle n'a pas été suivie
+  // ou explicitement passée.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("tour_step, tour_completed_at")
+    .eq("id", user.id)
+    .single();
   const brandName = displayName(workspace);
   const options = workspaces.map((w) => ({
     id: w.id,
@@ -50,6 +59,11 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           </main>
         </div>
       </div>
+
+      <ProductTour
+        initialStep={profile?.tour_step ?? 0}
+        autoStart={!profile?.tour_completed_at}
+      />
     </ThemeProvider>
   );
 }

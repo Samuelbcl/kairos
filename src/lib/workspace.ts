@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 export type Branding = {
   brand_name?: string;
   logo_url?: string;
+  favicon_url?: string;
   accent?: string;
   radius?: string;
   mode?: "light" | "dark";

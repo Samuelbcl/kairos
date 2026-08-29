@@ -149,7 +149,7 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
         title="Contacts"
         description="Tes comptes et les personnes qui vont avec."
         action={
-          <div className="flex gap-2">
+          <div className="flex gap-2" data-tour="action-import">
             <Button
               variant="outline"
               nativeButton={false}

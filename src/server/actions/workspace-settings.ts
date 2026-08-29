@@ -18,6 +18,7 @@ const brandingSchema = z.object({
   radius: z.enum(["0.25rem", "0.5rem", "0.75rem", "1rem"]).optional(),
   mode: z.enum(["light", "dark"]).optional(),
   logo_url: z.string().trim().max(500).optional(),
+  favicon_url: z.string().trim().max(500).optional(),
 });
 
 /** Branding de l'espace : c'est ce qui rend Kairos revendable en marque blanche. */
