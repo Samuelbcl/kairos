@@ -35,6 +35,12 @@ export async function generateMetadata(): Promise<Metadata> {
     // Next donne la priorité au fichier physique et ignorerait ce réglage,
     // ce qui rendait l'icône d'onglet d'un espace sans effet.
     icons: { icon: brand.faviconUrl ?? "/favicon.ico" },
+    // Search Console : preuve de propriété du domaine, exigée par Google pour
+    // valider un client OAuth. Vide tant que la variable n'est pas posée —
+    // Next omet alors la balise au lieu d'en écrire une vide.
+    verification: process.env.GOOGLE_SITE_VERIFICATION
+      ? { google: process.env.GOOGLE_SITE_VERIFICATION }
+      : undefined,
   };
 }
 

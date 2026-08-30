@@ -2,6 +2,7 @@
  * Vérifie la configuration Google, des deux côtés.
  *
  *   npm run check:google
+ *   npm run check:google -- https://mon-domaine.app   (teste la prod)
  *
  * Deux intégrations distinctes se cachent derrière « Google », et elles se
  * configurent à des endroits différents :
@@ -70,8 +71,46 @@ if (!secretPresent) {
   todo.push("Colle le Client Secret dans .env.local (le même que dans Supabase).");
 }
 
-const appUrl = env.NEXT_PUBLIC_APP_URL ?? "";
+/**
+ * NEXT_PUBLIC_APP_URL doit être une origine nue — schéma + domaine, rien
+ * d'autre. Toutes les URI de redirection OAuth et tous les liens des e-mails
+ * sont construits par concaténation dessus : un chemin ou une query collés
+ * depuis la barre d'adresse du navigateur les casse tous en silence.
+ */
+// Un argument permet de viser la prod depuis la machine locale : les pages
+// publiques doivent être atteignables là où Google ira les chercher.
+const appUrl = (process.argv[2] ?? env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "");
 check("NEXT_PUBLIC_APP_URL défini", Boolean(appUrl), appUrl || "vide");
+
+let appOrigin = "";
+if (appUrl) {
+  let parsed = null;
+  try {
+    parsed = new URL(appUrl);
+  } catch {
+    /* url invalide : signalée juste en dessous */
+  }
+
+  const bare = Boolean(parsed) && parsed.pathname === "/" && !parsed.search && !parsed.hash;
+  appOrigin = parsed ? parsed.origin : "";
+
+  check(
+    "NEXT_PUBLIC_APP_URL est une origine nue",
+    bare,
+    bare
+      ? ""
+      : parsed
+        ? `contient « ${parsed.pathname}${parsed.search} » — attendu : ${parsed.origin}`
+        : "URL illisible",
+  );
+
+  if (!bare && parsed) {
+    todo.push(
+      `Remplace NEXT_PUBLIC_APP_URL par ${parsed.origin} (sans chemin ni paramètre), ` +
+        "dans .env.local et sur Vercel.",
+    );
+  }
+}
 
 // --- 2. Ce que Supabase a enregistré ---------------------------------------
 console.log("\n2. Connexion Google (Supabase)");
@@ -127,7 +166,7 @@ if (!idLooksRight) {
 } else {
   // On appelle l'écran de consentement sans suivre la redirection : Google
   // répond par une erreur explicite si le client ou l'URI est inconnu.
-  const redirect = `${appUrl.replace(/\/$/, "")}/api/integrations/google/callback`;
+  const redirect = `${appOrigin}/api/integrations/google/callback`;
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirect,
@@ -162,6 +201,56 @@ if (!idLooksRight) {
   } catch (error) {
     check("client reconnu par Google", false, `appel impossible : ${error.message}`);
   }
+}
+
+// --- Pages publiques exigées par la validation du branding ------------------
+// Google refuse un client dont la page d'accueil est derrière une connexion,
+// et demande une politique de confidentialité atteignable. On teste sans
+// cookie, exactement comme son validateur.
+if (appOrigin) {
+  console.log("\nPages publiques");
+
+  // On exige un marqueur de contenu, pas seulement un 200 : une redirection
+  // vers /login répond 200 elle aussi, et passerait pour une réussite.
+  for (const [path, label, marker] of [
+    ["/", "page d'accueil lisible sans compte", "Aucune relance oubliée"],
+    ["/confidentialite", "règles de confidentialité publiques", "Règles de confidentialité"],
+    ["/conditions", "conditions d'utilisation publiques", "Conditions d'utilisation"],
+  ]) {
+    const target = `${appOrigin}${path}`;
+    try {
+      const response = await fetch(target, { redirect: "manual" });
+      const body = response.status === 200 ? await response.text() : "";
+      const served = response.status === 200 && body.includes(marker);
+      const redirected = response.status >= 300 && response.status < 400;
+
+      check(
+        label,
+        served,
+        redirected
+          ? `redirige vers ${response.headers.get("location") ?? "ailleurs"}`
+          : response.status !== 200
+            ? `HTTP ${response.status}`
+            : served
+              ? ""
+              : `page servie, mais « ${marker} » absent`,
+      );
+
+      if (!served) {
+        todo.push(`${target} doit répondre 200 sans être connecté.`);
+      }
+    } catch (error) {
+      check(label, false, `injoignable : ${error.message}`);
+    }
+  }
+
+  check(
+    "propriété du domaine vérifiable",
+    Boolean(env.GOOGLE_SITE_VERIFICATION),
+    env.GOOGLE_SITE_VERIFICATION
+      ? ""
+      : "GOOGLE_SITE_VERIFICATION absent — requis pour faire valider le branding",
+  );
 }
 
 // --- Rapport ----------------------------------------------------------------

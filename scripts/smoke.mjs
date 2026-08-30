@@ -197,6 +197,7 @@ try {
 
   // Sans cookie : Google doit pouvoir atteindre ces pages, et un prospect aussi.
   for (const [path, marker] of [
+    ["/", "Aucune relance oubliée"],
     ["/confidentialite", "Règles de confidentialité"],
     ["/conditions", "Conditions d'utilisation"],
   ]) {

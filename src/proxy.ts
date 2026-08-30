@@ -11,6 +11,7 @@ const PUBLIC_PATHS = [
   // atteignable pour autoriser un client OAuth.
   "/confidentialite",
   "/conditions",
+  "/accueil",
 ];
 
 function isPublic(pathname: string) {
@@ -63,6 +64,15 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
+
+  // Racine sans session : on sert la page de présentation au lieu de renvoyer
+  // vers /login. Une réécriture, pas une redirection — l'URL reste la racine,
+  // ce que Google vérifie pour valider le client OAuth.
+  if (!user && pathname === "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/accueil";
+    return NextResponse.rewrite(url, { headers: response.headers });
+  }
 
   if (!user && !isPublic(pathname)) {
     const url = request.nextUrl.clone();
