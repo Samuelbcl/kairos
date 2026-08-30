@@ -19,8 +19,10 @@
     "test:tags": "node scripts/test-tags.mjs",
     "db:migrate": "node scripts/migrate.mjs",
     "check:deploy": "node scripts/check-deploy.mjs",
-    "verify": "npm run check:boundaries && npm run check:deploy && npm run typecheck && npm run lint && npm run build",
-    "check:google": "node scripts/check-google.mjs"
+    "verify": "npm run check:boundaries && npm run check:deploy && npm run test:units && npm run typecheck && npm run lint && npm run build",
+    "check:google": "node scripts/check-google.mjs",
+    "check:oauth": "node scripts/inspect-oauth.mjs",
+    "test:units": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-units.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
