@@ -5,6 +5,7 @@ import { BrandingPanel } from "@/components/settings/branding-panel";
 import { StagesPanel } from "@/components/settings/stages-panel";
 import { TagsPanel, type WorkspaceTag } from "@/components/settings/tags-panel";
 import { CustomFieldsPanel } from "@/components/settings/custom-fields-panel";
+import { FieldLabelsPanel } from "@/components/settings/field-labels-panel";
 import { DataPanel } from "@/components/settings/data-panel";
 import { TourPanel } from "@/components/settings/tour-panel";
 import { createClient, getUser } from "@/lib/supabase/server";
@@ -93,6 +94,8 @@ export default async function WorkspaceSettingsPage() {
         <StagesPanel stages={stages ?? []} canManage={canManage} />
 
         <TagsPanel tags={tags} canManage={canManage} />
+
+        {canManage ? <FieldLabelsPanel labels={workspace.fieldLabels} /> : null}
 
         <CustomFieldsPanel
           fields={(fields ?? []).map((f) => ({

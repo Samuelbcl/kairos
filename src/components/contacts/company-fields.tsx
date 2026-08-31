@@ -5,6 +5,7 @@ import { CustomFields } from "./custom-fields";
 import { updateCompany } from "@/server/actions/companies";
 import type { Database } from "@/types/db";
 import type { CustomField } from "@/components/settings/custom-fields-panel";
+import type { ResolvedLabels } from "@/lib/field-labels";
 
 type Company = Database["public"]["Tables"]["companies"]["Row"];
 
@@ -12,9 +13,12 @@ type Company = Database["public"]["Tables"]["companies"]["Row"];
 export function CompanyFields({
   company,
   customFields = [],
+  labels,
 }: {
   company: Company;
   customFields?: CustomField[];
+  /** Noms des champs resolus pour cet espace : voir lib/field-labels. */
+  labels: ResolvedLabels;
 }) {
   async function save(field: string, value: string) {
     return updateCompany({ id: company.id, [field]: value });
@@ -26,9 +30,9 @@ export function CompanyFields({
 
   return (
     <div className="flex flex-col divide-y">
-      <InlineEdit label="Nom" field="name" value={company.name} onSave={save} />
+      <InlineEdit label={labels.name} field="name" value={company.name} onSave={save} />
       <InlineEdit
-        label="E-mail"
+        label={labels.email}
         field="email"
         type="email"
         value={company.email}
@@ -40,7 +44,7 @@ export function CompanyFields({
         )}
       />
       <InlineEdit
-        label="Téléphone"
+        label={labels.phone}
         field="phone"
         type="tel"
         value={company.phone}
@@ -52,7 +56,7 @@ export function CompanyFields({
         )}
       />
       <InlineEdit
-        label="Site web"
+        label={labels.website}
         field="website"
         value={company.website}
         onSave={save}
@@ -68,18 +72,18 @@ export function CompanyFields({
           </a>
         )}
       />
-      <InlineEdit label="Secteur" field="sector" value={company.sector} onSave={save} />
-      <InlineEdit label="Adresse" field="address" value={company.address} onSave={save} />
-      <InlineEdit label="Ville" field="city" value={company.city} onSave={save} />
-      <InlineEdit label="Taille" field="size" value={company.size} onSave={save} />
+      <InlineEdit label={labels.sector} field="sector" value={company.sector} onSave={save} />
+      <InlineEdit label={labels.address} field="address" value={company.address} onSave={save} />
+      <InlineEdit label={labels.city} field="city" value={company.city} onSave={save} />
+      <InlineEdit label={labels.size} field="size" value={company.size} onSave={save} />
       <InlineEdit
-        label="Tags"
+        label={labels.tags}
         field="tags"
         value={company.tags.join(", ")}
         onSave={save}
         placeholder="Séparés par une virgule"
       />
-      <InlineEdit label="Source" field="source" value={company.source} onSave={save} />
+      <InlineEdit label={labels.source} field="source" value={company.source} onSave={save} />
 
       <CustomFields
         fields={customFields}

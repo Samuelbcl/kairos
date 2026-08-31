@@ -357,6 +357,115 @@ export async function deleteTaskEvent(
  * bidirectionnelle si pénible — et ça couvre le cas réel, celui où on déplace
  * un rendez-vous depuis son téléphone.
  */
+/** Un rendez-vous lu dans l'agenda de l'utilisateur, jamais modifie par Kairos. */
+export type ExternalEvent = {
+  id: string;
+  title: string;
+  start: string;
+  end: string | null;
+  allDay: boolean;
+  link: string | null;
+};
+
+/**
+ * Lit les rendez-vous d'une periode, en lecture seule.
+ *
+ * Kairos ne montrait que ses propres relances : on ne voyait donc pas ses
+ * reunions, et on posait des relances par-dessus. Cette lecture ne cree, ne
+ * modifie ni ne supprime rien — la portee demandee a Google reste la meme.
+ *
+ * Les evenements poses par Kairos remontent aussi : c'est a l'appelant de les
+ * ecarter en comparant leur identifiant a `tasks.external_event_id`, sinon une
+ * relance s'afficherait deux fois.
+ *
+ * Renvoie une liste vide plutot que de lever : un agenda momentanement
+ * injoignable ne doit pas empecher d'ouvrir la page.
+ */
+export async function listExternalEvents(
+  integration: Integration,
+  from: Date,
+  to: Date,
+): Promise<ExternalEvent[]> {
+  try {
+    if (integration.provider === "google") {
+      const params = new URLSearchParams({
+        timeMin: from.toISOString(),
+        timeMax: to.toISOString(),
+        singleEvents: "true",
+        orderBy: "startTime",
+        maxResults: "500",
+      });
+
+      const response = await googleRequest(integration, `/events?${params}`);
+      if (!response.ok) return [];
+
+      const body = (await response.json()) as {
+        items?: {
+          id: string;
+          summary?: string;
+          status?: string;
+          htmlLink?: string;
+          start?: { dateTime?: string; date?: string };
+          end?: { dateTime?: string; date?: string };
+        }[];
+      };
+
+      return (body.items ?? [])
+        .filter((item) => item.status !== "cancelled" && (item.start?.dateTime || item.start?.date))
+        .map((item) => ({
+          id: item.id,
+          title: item.summary?.trim() || "(sans titre)",
+          start: item.start?.dateTime ?? `${item.start?.date}T00:00:00`,
+          end: item.end?.dateTime ?? null,
+          allDay: !item.start?.dateTime,
+          link: item.htmlLink ?? null,
+        }));
+    }
+
+    if (integration.provider === "microsoft") {
+      const params = new URLSearchParams({
+        startDateTime: from.toISOString(),
+        endDateTime: to.toISOString(),
+        $orderby: "start/dateTime",
+        $top: "500",
+      });
+
+      const response = await graphRequest(integration, `/calendarView?${params}`);
+      if (!response.ok) return [];
+
+      const body = (await response.json()) as {
+        value?: {
+          id: string;
+          subject?: string;
+          isAllDay?: boolean;
+          webLink?: string;
+          start?: { dateTime?: string };
+          end?: { dateTime?: string };
+        }[];
+      };
+
+      return (body.value ?? [])
+        .filter((item) => item.start?.dateTime)
+        .map((item) => ({
+          id: item.id,
+          title: item.subject?.trim() || "(sans titre)",
+          start: item.start!.dateTime!,
+          end: item.end?.dateTime ?? null,
+          allDay: Boolean(item.isAllDay),
+          link: item.webLink ?? null,
+        }));
+    }
+
+    return [];
+  } catch (error) {
+    console.error(
+      "[calendar] lecture des evenements impossible",
+      error instanceof Error ? error.message : "erreur inconnue",
+    );
+    return [];
+  }
+}
+
 export async function pullCalendarChanges(
   supabase: Client,
   workspaceId: string,

@@ -15,6 +15,7 @@ import {
 import { updateContact } from "@/server/actions/contacts";
 import type { Database } from "@/types/db";
 import type { CustomField } from "@/components/settings/custom-fields-panel";
+import type { ResolvedLabels } from "@/lib/field-labels";
 
 type Contact = Database["public"]["Tables"]["contacts"]["Row"];
 
@@ -24,10 +25,13 @@ export function ContactFields({
   contact,
   companies,
   customFields = [],
+  labels,
 }: {
   contact: Contact;
   companies: { id: string; name: string }[];
   customFields?: CustomField[];
+  /** Noms des champs resolus pour cet espace : voir lib/field-labels. */
+  labels: ResolvedLabels;
 }) {
   const [pending, startTransition] = useTransition();
 
@@ -52,10 +56,10 @@ export function ContactFields({
 
   return (
     <div className="flex flex-col divide-y">
-      <InlineEdit label="Prénom" field="first_name" value={contact.first_name} onSave={save} />
-      <InlineEdit label="Nom" field="last_name" value={contact.last_name} onSave={save} />
+      <InlineEdit label={labels.first_name} field="first_name" value={contact.first_name} onSave={save} />
+      <InlineEdit label={labels.last_name} field="last_name" value={contact.last_name} onSave={save} />
       <InlineEdit
-        label="E-mail"
+        label={labels.email}
         field="email"
         type="email"
         value={contact.email}
@@ -67,7 +71,7 @@ export function ContactFields({
         )}
       />
       <InlineEdit
-        label="Téléphone"
+        label={labels.phone}
         field="phone"
         type="tel"
         value={contact.phone}
@@ -78,7 +82,7 @@ export function ContactFields({
           </a>
         )}
       />
-      <InlineEdit label="Fonction" field="role_title" value={contact.role_title} onSave={save} />
+      <InlineEdit label={labels.role_title} field="role_title" value={contact.role_title} onSave={save} />
 
       <div className="grid grid-cols-[8rem_1fr] items-center gap-3 py-1.5">
         <Label htmlFor="contact-company" className="text-sm font-normal text-muted-foreground">
@@ -104,7 +108,7 @@ export function ContactFields({
       </div>
 
       <InlineEdit
-        label="Tags"
+        label={labels.tags}
         field="tags"
         value={contact.tags.join(", ")}
         onSave={save}

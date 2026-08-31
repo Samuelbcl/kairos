@@ -4,6 +4,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
+import type { FieldLabelOverrides } from "@/lib/field-labels";
 
 export type Branding = {
   brand_name?: string;
@@ -19,6 +20,8 @@ export type Workspace = {
   name: string;
   slug: string;
   branding: Branding;
+  /** Renommage des champs integres, indexe par "<entite>.<champ>". */
+  fieldLabels: FieldLabelOverrides;
   timezone: string;
   role: "owner" | "admin" | "member";
 };
@@ -36,7 +39,7 @@ export const getWorkspaces = cache(async (): Promise<Workspace[]> => {
   const { data, error } = await supabase
     .from("workspace_members")
     .select(
-      "role, workspaces!inner(id, name, slug, branding, timezone, created_at)",
+      "role, workspaces!inner(id, name, slug, branding, field_labels, timezone, created_at)",
     )
     .order("created_at", { referencedTable: "workspaces", ascending: true });
 
@@ -51,6 +54,7 @@ export const getWorkspaces = cache(async (): Promise<Workspace[]> => {
     slug: row.workspaces.slug,
     // branding est un jsonb : la forme n'est pas garantie par le type généré.
     branding: (row.workspaces.branding ?? {}) as Branding,
+    fieldLabels: (row.workspaces.field_labels ?? {}) as FieldLabelOverrides,
     timezone: row.workspaces.timezone,
     role: row.role,
   }));

@@ -1155,6 +1155,7 @@ export type Database = {
           branding: Json
           created_at: string
           created_by: string | null
+          field_labels: Json
           id: string
           name: string
           plan: string
@@ -1167,6 +1168,7 @@ export type Database = {
           branding?: Json
           created_at?: string
           created_by?: string | null
+          field_labels?: Json
           id?: string
           name: string
           plan?: string
@@ -1179,6 +1181,7 @@ export type Database = {
           branding?: Json
           created_at?: string
           created_by?: string | null
+          field_labels?: Json
           id?: string
           name?: string
           plan?: string

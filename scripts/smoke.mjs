@@ -243,11 +243,51 @@ try {
             : `contenu « ${marker} » absent`,
     );
   }
+  // --- 5. Personnalisation --------------------------------------------------
+  console.log("\n5. Personnalisation");
+
+  // Renommer un champ intégré doit changer la fiche, sans toucher aux données.
+  await admin
+    .from("workspaces")
+    .update({
+      field_labels: { "company.name": "Raison sociale", "company.city": "Commune" },
+    })
+    .eq("id", workspaceId);
+
+  const fiche = await fetch(`${BASE_URL}/companies/${company.id}`, {
+    headers: { cookie },
+    redirect: "manual",
+  });
+  const ficheBody = await fiche.text();
+
+  const renamed = ficheBody.includes("Raison sociale") && ficheBody.includes("Commune");
+  check(
+    "champ renommé visible sur la fiche",
+    renamed,
+    renamed ? "" : "les libellés personnalisés ne remontent pas",
+  );
+  const kept = ficheBody.includes("Menuiserie Dupont");
+  check("renommage sans perte de donnée", kept, kept ? "" : "la valeur du champ a disparu");
+  // Le libelle passe par la charge utile React : les accents y sont echappes.
+  const hasSelect =
+    ficheBody.includes("tape de l") && ficheBody.includes("opportunit");
+  check(
+    "sélecteur d'étape sur la fiche entreprise",
+    hasSelect,
+    hasSelect ? "" : "le sélecteur de pipeline est absent",
+  );
+
+  const settings = await fetch(`${BASE_URL}/settings/workspace`, {
+    headers: { cookie },
+    redirect: "manual",
+  });
+  const hasPanel = (await settings.text()).includes("Noms des champs");
+  check("panneau de renommage dans les réglages", hasPanel, hasPanel ? "" : "le panneau est absent");
 } catch (error) {
   console.error(`\nInterrompu : ${error.message}`);
   process.exitCode = 1;
 } finally {
-  console.log("\n5. Nettoyage");
+  console.log("\n6. Nettoyage");
   if (workspaceId) await admin.from("workspaces").delete().eq("id", workspaceId);
   if (userId) await admin.auth.admin.deleteUser(userId);
   console.log("  compte et espace de test supprimés.");

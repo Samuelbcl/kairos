@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Building2, Plus, User } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { TagBadge } from "@/components/contacts/tag-badge";
+import {
+  DealStageSelect,
+  type StageOption,
+} from "@/components/contacts/deal-stage-select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Timeline, type TimelineEntry } from "@/components/contacts/timeline";
@@ -13,6 +16,7 @@ import { TaskPanel } from "@/components/tasks/task-panel";
 import { NewContactButton } from "@/components/contacts/new-contact-button";
 import { DeleteCompanyButton } from "@/components/contacts/delete-company-button";
 import { createClient } from "@/lib/supabase/server";
+import { resolveFieldLabels } from "@/lib/field-labels";
 import { getCurrentWorkspace } from "@/lib/workspace";
 import { fullName } from "@/lib/format";
 
@@ -30,7 +34,11 @@ export async function generateMetadata(props: PageProps<"/companies/[id]">) {
 export default async function CompanyPage(props: PageProps<"/companies/[id]">) {
   const { id } = await props.params;
   const workspace = await getCurrentWorkspace();
+
   if (!workspace) notFound();
+  // Noms des champs propres a l'espace : « Raison sociale » plutot que
+  // « Nom » si le client le prefere.
+  const fieldLabels = resolveFieldLabels("company", workspace.fieldLabels);
 
   const supabase = await createClient();
 
@@ -56,7 +64,7 @@ export default async function CompanyPage(props: PageProps<"/companies/[id]">) {
       .order("last_name"),
     supabase
       .from("deals")
-      .select("id, title, value, currency, status, stages(name, color)")
+      .select("id, title, value, currency, status, stage_id, stages(name, color)")
       .eq("company_id", id)
       .order("created_at", { ascending: false }),
     supabase
@@ -80,6 +88,22 @@ export default async function CompanyPage(props: PageProps<"/companies/[id]">) {
     .select("name, color")
     .eq("workspace_id", workspace.id);
   const tagColors = new Map((tagRows ?? []).map((t) => [t.name, t.color]));
+
+  // Les etapes alimentent le selecteur : on ne les code jamais en dur, elles
+  // sont personnalisables dans les reglages.
+  const { data: stageRows } = await supabase
+    .from("stages")
+    .select("id, name, color, is_won, is_lost")
+    .eq("workspace_id", workspace.id)
+    .order("position");
+
+  const stageOptions: StageOption[] = (stageRows ?? []).map((stage) => ({
+    id: stage.id,
+    name: stage.name,
+    color: stage.color,
+    isWon: stage.is_won,
+    isLost: stage.is_lost,
+  }));
 
   const { data: customFields } = await supabase
     .from("custom_fields")
@@ -144,6 +168,7 @@ export default async function CompanyPage(props: PageProps<"/companies/[id]">) {
             </CardHeader>
             <CardContent>
               <CompanyFields
+            labels={fieldLabels}
                 company={company}
                 customFields={(customFields ?? []).map((f) => ({
                   id: f.id,
@@ -247,19 +272,11 @@ export default async function CompanyPage(props: PageProps<"/companies/[id]">) {
                       <span className="min-w-0 truncate text-sm">
                         {deal.title}
                       </span>
-                      <Badge
-                        variant="secondary"
-                        style={
-                          deal.stages?.color
-                            ? {
-                                backgroundColor: `color-mix(in oklch, ${deal.stages.color} 15%, transparent)`,
-                                color: deal.stages.color,
-                              }
-                            : undefined
-                        }
-                      >
-                        {deal.stages?.name ?? "—"}
-                      </Badge>
+                      <DealStageSelect
+                        dealId={deal.id}
+                        stageId={deal.stage_id}
+                        stages={stageOptions}
+                      />
                     </li>
                   ))}
                 </ul>

@@ -60,7 +60,15 @@ try {
   await client.connect();
   console.log(`Connecté au projet ${projectRef} (${region}).`);
   console.log(`Exécution de ${file} …`);
-  await client.query(sql);
+  const result = await client.query(sql);
+
+  // Un SELECT sans affichage ne sert a rien : on montre les lignes rendues.
+  // pg renvoie un tableau de resultats quand le fichier contient plusieurs
+  // instructions, un objet unique sinon.
+  for (const part of Array.isArray(result) ? result : [result]) {
+    if (part?.rows?.length) console.table(part.rows);
+  }
+
   console.log("Terminé sans erreur.");
 } catch (error) {
   console.error(`\nÉCHEC : ${error.message}`);

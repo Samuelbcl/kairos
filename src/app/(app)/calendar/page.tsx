@@ -1,7 +1,16 @@
 import { CalendarDays } from "lucide-react";
 import { PageHeader } from "@/components/shell/page-header";
 import { EmptyState } from "@/components/shell/empty-state";
-import { CalendarView, type CalendarTask } from "@/components/tasks/calendar-view";
+import {
+  CalendarView,
+  type CalendarEvent,
+  type CalendarTask,
+} from "@/components/tasks/calendar-view";
+import { SyncCalendarButton } from "@/components/tasks/sync-calendar-button";
+import {
+  getWorkspaceIntegration,
+  listExternalEvents,
+} from "@/lib/integrations/calendar";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentWorkspace } from "@/lib/workspace";
 
@@ -49,21 +58,46 @@ export default async function CalendarPage() {
     companyName: task.companies?.name ?? null,
   }));
 
+  // Les vrais rendez-vous de l'agenda connecte, en lecture seule. Sans eux, on
+  // programme des relances sur des creneaux deja pris.
+  const integration = await getWorkspaceIntegration(supabase, workspace.id);
+  const syncedEventIds = new Set(
+    (data ?? []).map((task) => task.external_event_id).filter(Boolean),
+  );
+
+  const events: CalendarEvent[] = integration
+    ? (await listExternalEvents(integration, from, to))
+        // Une relance deja affichee comme telle ne doit pas revenir en double.
+        .filter((event) => !syncedEventIds.has(event.id))
+        .map((event) => ({
+          id: event.id,
+          title: event.title,
+          start: event.start,
+          allDay: event.allDay,
+          link: event.link,
+        }))
+    : [];
+
   return (
     <>
       <PageHeader
         title="Calendrier"
-        description="Tes relances mois par mois. Glisse une carte pour la reporter."
+        description={
+          integration
+            ? "Tes relances et tes rendez-vous, mois par mois. Glisse une relance pour la reporter."
+            : "Tes relances mois par mois. Connecte un agenda pour y voir aussi tes rendez-vous."
+        }
+        action={integration ? <SyncCalendarButton /> : null}
       />
 
-      {tasks.length === 0 ? (
+      {tasks.length === 0 && events.length === 0 ? (
         <EmptyState
           icon={CalendarDays}
           title="Aucune relance sur cette période."
           description="Programme-en une depuis une fiche, ou depuis la vue Aujourd'hui."
         />
       ) : (
-        <CalendarView tasks={tasks} />
+        <CalendarView tasks={tasks} events={events} />
       )}
     </>
   );

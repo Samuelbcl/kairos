@@ -10,6 +10,7 @@ import { ContactNotes } from "@/components/contacts/contact-notes";
 import { TaskPanel } from "@/components/tasks/task-panel";
 import { DeleteCompanyButton } from "@/components/contacts/delete-company-button";
 import { createClient } from "@/lib/supabase/server";
+import { resolveFieldLabels } from "@/lib/field-labels";
 import { getCurrentWorkspace } from "@/lib/workspace";
 import { fullName } from "@/lib/format";
 
@@ -27,7 +28,11 @@ export async function generateMetadata(props: PageProps<"/contacts/[id]">) {
 export default async function ContactPage(props: PageProps<"/contacts/[id]">) {
   const { id } = await props.params;
   const workspace = await getCurrentWorkspace();
+
   if (!workspace) notFound();
+  // Noms des champs propres a l'espace : « Raison sociale » plutot que
+  // « Nom » si le client le prefere.
+  const fieldLabels = resolveFieldLabels("contact", workspace.fieldLabels);
 
   const supabase = await createClient();
 
@@ -140,6 +145,7 @@ export default async function ContactPage(props: PageProps<"/contacts/[id]">) {
             </CardHeader>
             <CardContent>
               <ContactFields
+            labels={fieldLabels}
                 contact={contact}
                 companies={companies ?? []}
                 customFields={(customFields ?? []).map((f) => ({

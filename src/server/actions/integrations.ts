@@ -85,3 +85,41 @@ export async function resyncCalendar(): Promise<ActionResult<{ synced: number }>
   revalidatePath("/today");
   return ok({ synced });
 }
+
+/**
+ * Synchronisation immédiate, dans les deux sens.
+ *
+ * Le cron ne passe qu'une fois par jour : sans ce bouton, un rendez-vous
+ * déplacé dans l'agenda ce matin n'apparaissait dans Kairos que le lendemain.
+ * Pousse d'abord les relances qui manquent à l'agenda, puis relit les
+ * déplacements faits de l'autre côté.
+ */
+export async function refreshCalendar(): Promise<
+  ActionResult<{ pushed: number; updated: number }>
+> {
+  const workspace = await requireWorkspace();
+  const supabase = await createClient();
+
+  const pushed = await resyncCalendar();
+
+  const { getWorkspaceIntegration, pullCalendarChanges } = await import(
+    "@/lib/integrations/calendar"
+  );
+  const integration = await getWorkspaceIntegration(supabase, workspace.id);
+
+  if (!integration) {
+    return fail(
+      "Aucun agenda connecté. Va dans Réglages → Intégrations pour en relier un.",
+    );
+  }
+
+  const pulled = await pullCalendarChanges(supabase, workspace.id, integration);
+
+  revalidatePath("/calendar");
+  revalidatePath("/today");
+
+  return ok({
+    pushed: pushed.ok ? pushed.data.synced : 0,
+    updated: pulled.updated,
+  });
+}

@@ -28,6 +28,15 @@ export type CalendarTask = {
   companyName: string | null;
 };
 
+/** Rendez-vous venant de l'agenda connecte : lecture seule. */
+export type CalendarEvent = {
+  id: string;
+  title: string;
+  start: string;
+  allDay: boolean;
+  link: string | null;
+};
+
 const WEEKDAYS = ["lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim."];
 
 /** Clé de jour locale — pas d'UTC, sinon une relance de 23 h change de case. */
@@ -51,7 +60,13 @@ function monthGrid(year: number, month: number) {
   return lastVisible.getMonth() === month ? days : days.slice(0, 35);
 }
 
-export function CalendarView({ tasks }: { tasks: CalendarTask[] }) {
+export function CalendarView({
+  tasks,
+  events = [],
+}: {
+  tasks: CalendarTask[];
+  events?: CalendarEvent[];
+}) {
   const today = new Date();
   const [cursor, setCursor] = useState(
     () => new Date(today.getFullYear(), today.getMonth(), 1),
@@ -77,6 +92,17 @@ export function CalendarView({ tasks }: { tasks: CalendarTask[] }) {
     }
     return map;
   }, [tasks]);
+
+  const eventsByDay = useMemo(() => {
+    const map = new Map<string, CalendarEvent[]>();
+    for (const event of events) {
+      const key = dayKey(new Date(event.start));
+      const list = map.get(key);
+      if (list) list.push(event);
+      else map.set(key, [event]);
+    }
+    return map;
+  }, [events]);
 
   const monthLabel = new Intl.DateTimeFormat("fr-BE", {
     month: "long",
@@ -163,6 +189,7 @@ export function CalendarView({ tasks }: { tasks: CalendarTask[] }) {
                   key={dayKey(day)}
                   day={day}
                   tasks={byDay.get(dayKey(day)) ?? []}
+                  events={eventsByDay.get(dayKey(day)) ?? []}
                   inMonth={day.getMonth() === cursor.getMonth()}
                   isToday={dayKey(day) === todayKey}
                   pending={pending}
@@ -172,10 +199,22 @@ export function CalendarView({ tasks }: { tasks: CalendarTask[] }) {
           </div>
         </div>
 
-        <p className="text-xs text-muted-foreground">
-          Glisse une relance sur un autre jour pour la reporter. L&apos;heure est
-          conservée, et l&apos;événement d&apos;agenda suit.
-        </p>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <span aria-hidden className="size-2 rounded-full bg-primary" />
+            Relances — déplaçables
+          </span>
+          {events.length ? (
+            <span className="flex items-center gap-1.5">
+              <span aria-hidden className="size-2 rounded-full bg-muted-foreground/50" />
+              Rendez-vous de ton agenda — lecture seule
+            </span>
+          ) : null}
+          <span>
+            Glisse une relance sur un autre jour pour la reporter. L&apos;heure
+            est conservée, et l&apos;événement d&apos;agenda suit.
+          </span>
+        </div>
       </div>
     </DndContext>
   );
@@ -184,12 +223,14 @@ export function CalendarView({ tasks }: { tasks: CalendarTask[] }) {
 function DayCell({
   day,
   tasks,
+  events,
   inMonth,
   isToday,
   pending,
 }: {
   day: Date;
   tasks: CalendarTask[];
+  events: CalendarEvent[];
   inMonth: boolean;
   isToday: boolean;
   pending: boolean;
@@ -220,6 +261,10 @@ function DayCell({
 
       {tasks.map((task) => (
         <CalendarChip key={task.id} task={task} disabled={pending} />
+      ))}
+
+      {events.map((event) => (
+        <EventChip key={event.id} event={event} />
       ))}
     </div>
   );
@@ -284,5 +329,47 @@ function CalendarChip({
         <span className="block truncate font-medium">{task.title}</span>
       )}
     </div>
+  );
+}
+
+/**
+ * Rendez-vous venant de l'agenda connecte.
+ *
+ * Volontairement sobre et non deplacable : Kairos ne gere que ses propres
+ * relances. Afficher le reste evite de poser une relance sur un creneau deja
+ * pris, sans laisser croire qu'on peut le modifier d'ici.
+ */
+function EventChip({ event }: { event: CalendarEvent }) {
+  const time = event.allDay
+    ? "journée"
+    : new Intl.DateTimeFormat("fr-BE", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(new Date(event.start));
+
+  const content = (
+    <>
+      <span className="tabular shrink-0 text-muted-foreground">{time}</span>
+      <span className="truncate">{event.title}</span>
+    </>
+  );
+
+  return event.link ? (
+    <a
+      href={event.link}
+      target="_blank"
+      rel="noreferrer noopener"
+      title={`${event.title} — ouvrir dans ton agenda`}
+      className="flex items-center gap-1 rounded border-l-2 border-muted-foreground/40 bg-surface px-1.5 py-1 text-[11px] text-muted-foreground hover:bg-accent"
+    >
+      {content}
+    </a>
+  ) : (
+    <span
+      title={event.title}
+      className="flex items-center gap-1 rounded border-l-2 border-muted-foreground/40 bg-surface px-1.5 py-1 text-[11px] text-muted-foreground"
+    >
+      {content}
+    </span>
   );
 }

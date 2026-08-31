@@ -21,6 +21,47 @@ const brandingSchema = z.object({
   favicon_url: z.string().trim().max(500).optional(),
 });
 
+const fieldLabelsSchema = z.record(
+  z.string().regex(/^(company|contact)\.[a-z_]+$/, "Champ inconnu."),
+  z.string().trim().max(40, "40 caractères au maximum."),
+);
+
+/**
+ * Renommage des champs intégrés.
+ *
+ * Remplace la table entière plutôt que de fusionner : c'est ce qui permet
+ * d'effacer un renommage en vidant simplement la case. Les valeurs vides sont
+ * retirées, pour qu'un champ efface revienne à son nom d'origine au lieu de
+ * s'afficher sans intitulé.
+ */
+export async function saveFieldLabels(input: unknown): Promise<ActionResult> {
+  const parsed = fieldLabelsSchema.safeParse(input);
+  if (!parsed.success) return fail(firstIssue(parsed.error));
+
+  const workspace = await requireWorkspace();
+  if (workspace.role === "member") {
+    return fail("Seuls les propriétaires et administrateurs peuvent renommer les champs.");
+  }
+
+  const labels = Object.fromEntries(
+    Object.entries(parsed.data).filter(([, value]) => value.length > 0),
+  );
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("workspaces")
+    .update({ field_labels: labels as never })
+    .eq("id", workspace.id);
+
+  if (error) {
+    console.error("[workspace] field_labels", error.message);
+    return fail(pgError(error, "Enregistrement impossible. Réessaie."));
+  }
+
+  revalidatePath("/", "layout");
+  return ok(undefined);
+}
+
 /** Branding de l'espace : c'est ce qui rend Kairos revendable en marque blanche. */
 export async function updateBranding(input: unknown): Promise<ActionResult> {
   const parsed = brandingSchema.safeParse(input);
