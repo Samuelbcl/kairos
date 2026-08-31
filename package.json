@@ -26,7 +26,9 @@
     "check:layout": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-layout.mjs",
     "check:emails": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-emails.mjs",
     "fix:contacts": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/apply-contact-fixes.mjs",
-    "find:emails": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/find-emails.mjs"
+    "find:emails": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/find-emails.mjs",
+    "purge:unverified": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/purge-unverified.mjs",
+    "prospect": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/prospect-emails.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

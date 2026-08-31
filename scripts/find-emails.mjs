@@ -74,7 +74,14 @@ function extractEmails(html, domain) {
   const found = new Set();
 
   for (const raw of html.match(EMAIL) ?? []) {
-    const email = raw.toLowerCase().replace(/[.,;:)]+$/, "");
+    const email = raw
+      .toLowerCase()
+      .replace(/[.,;:)]+$/, "")
+      // Un numero de telephone colle a l'adresse dans le HTML : « 58.88.07info@… »
+      // devient « info@… ». Motif volontairement etroit — deux groupes de
+      // chiffres separes par des points suivis de lettres — pour ne pas
+      // amputer une adresse qui commencerait legitimement par des chiffres.
+      .replace(/^\d{2,4}(?:[.\s]\d{2,4})+(?=[a-z])/, "");
     if (JUNK.some((j) => email.includes(j))) continue;
     if (email.length > 70) continue;
     found.add(email);
