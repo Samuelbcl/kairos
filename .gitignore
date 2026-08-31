@@ -42,3 +42,6 @@ next-env.d.ts
 
 # env: on garde l'exemple versionne
 !.env.example
+
+# Export de diagnostic : contient des donnees de prospection, jamais versionne
+adresses-impossibles.csv

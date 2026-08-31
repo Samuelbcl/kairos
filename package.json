@@ -23,7 +23,9 @@
     "check:google": "node scripts/check-google.mjs",
     "check:oauth": "node scripts/inspect-oauth.mjs",
     "test:units": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-units.mjs",
-    "check:layout": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-layout.mjs"
+    "check:layout": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-layout.mjs",
+    "check:emails": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-emails.mjs",
+    "fix:contacts": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/apply-contact-fixes.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
