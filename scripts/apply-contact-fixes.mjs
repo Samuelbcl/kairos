@@ -84,6 +84,30 @@ for (const fix of fixes) {
   const company = rows[0];
   const custom = { ...(company.custom ?? {}) };
 
+  // `keep` : on signale sans rien vider. Un rejet temporaire (relais refusé,
+  // délai dépassé) n'est pas la preuve qu'une adresse est fausse — l'effacer
+  // ferait perdre une adresse peut-être bonne.
+  if (fix.keep) {
+    custom.email_a_verifier = fix.reason ?? "rejet à confirmer";
+    custom.email_a_verifier_le = today;
+
+    console.log(`  ${fix.name}`);
+    console.log(`      ${company.email}  ->  conservée, signalée à vérifier`);
+
+    if (write) {
+      const { error: flagError } = await admin
+        .from("companies")
+        .update({ custom })
+        .eq("id", company.id);
+      if (flagError) {
+        console.error(`      ECHEC : ${flagError.message}`);
+        continue;
+      }
+    }
+    applied += 1;
+    continue;
+  }
+
   if (company.email && company.email !== fix.email) {
     custom.email_precedente = company.email;
     custom.email_precedente_motif = fix.reason ?? "adresse invalide";
