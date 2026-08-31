@@ -44,7 +44,10 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
   return (
     <ThemeProvider branding={workspace?.branding ?? {}}>
-      <div className="flex min-h-full flex-1">
+      {/* Coquille a hauteur d'ecran : le menu reste en place, seul le contenu
+          defile. C'est ce qui permet au kanban de garder sa barre de defilement
+          horizontale a l'ecran au lieu de la repousser sous le pli. */}
+      <div className="flex h-dvh">
         <Sidebar
           workspaces={options}
           currentId={workspace?.id ?? ""}
@@ -52,9 +55,16 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar brandName={brandName} email={user.email ?? ""} name={name} />
-          {/* Pas d'overflow ici : un enfant flex a min-height:auto, donc il
-              grandirait au lieu de defiler. La page defile, la sidebar colle. */}
-          <main className="flex-1 bg-surface p-4 md:p-6">
+          {/* min-h-0 est indispensable : sans lui cet enfant flex garde
+              min-height:auto, grandit au lieu de defiler, et la page entiere
+              perd sa barre de defilement.
+
+              Volontairement un bloc et non un conteneur flex : en flex, tout
+              wrapper de tableau (qui porte un overflow, donc une taille
+              minimale nulle) se ferait ecraser a la hauteur de l'ecran et
+              defilerait dans sa propre boite au lieu de laisser la page
+              descendre. */}
+          <main className="min-h-0 flex-1 overflow-y-auto bg-surface p-4 md:p-6">
             {children}
           </main>
         </div>

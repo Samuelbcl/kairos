@@ -97,7 +97,10 @@ export default async function PipelinePage() {
   }));
 
   return (
-    <>
+    // Hauteur d'ecran pour cette page seulement : c'est ce qui garde la barre
+    // de defilement horizontale du tableau visible au lieu de la repousser
+    // sous le pli des que les colonnes s'allongent.
+    <div className="flex h-full flex-col">
       <PageHeader
         title="Pipeline"
         description={`${pipeline.name} · ${boardDeals.length} opportunité${boardDeals.length > 1 ? "s" : ""}`}
@@ -117,6 +120,6 @@ export default async function PipelinePage() {
           canManage={workspace.role !== "member"}
         />
       )}
-    </>
+    </div>
   );
 }

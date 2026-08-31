@@ -4,7 +4,8 @@ import { useMemo, useOptimistic, useState, useTransition } from "react";
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -60,7 +61,12 @@ export function KanbanBoard({
 
   const sensors = useSensors(
     // 6 px de tolérance : un clic reste un clic, on n'attrape pas par erreur.
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    // Au doigt, il faut maintenir appuyé un court instant. Avec un capteur
+    // unique, un simple balayage horizontal attrapait une carte au lieu de
+    // faire défiler le tableau : le kanban devenait impossible à parcourir
+    // sur téléphone.
+    useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 8 } }),
   );
 
   const byStage = useMemo(() => {
@@ -113,7 +119,7 @@ export function KanbanBoard({
       onDragEnd={onDragEnd}
       onDragCancel={() => setDraggingId(null)}
     >
-      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-4 md:-mx-6 md:px-6">
+      <div className="-mx-4 flex min-h-0 flex-1 gap-3 overflow-x-auto px-4 pb-1 md:-mx-6 md:px-6">
         {stages.map((stage) => (
           <KanbanColumn
             key={stage.id}
