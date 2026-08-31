@@ -164,9 +164,46 @@ console.log("\n3. Client OAuth chez Google");
 if (!idLooksRight) {
   check("client reconnu par Google", false, "Client ID absent ou mal formé");
 } else {
-  // On appelle l'écran de consentement sans suivre la redirection : Google
-  // répond par une erreur explicite si le client ou l'URI est inconnu.
   const redirect = `${appOrigin}/api/integrations/google/callback`;
+
+  try {
+    const reason = await probeRedirectUri(clientId, redirect);
+
+    check(
+      "client reconnu par Google",
+      reason !== "invalid_client",
+      reason === "invalid_client" ? "Google ne connaît pas ce Client ID" : "",
+    );
+
+    const declared = reason === null;
+    check(
+      `URI de redirection déclarée (${redirect})`,
+      declared,
+      declared ? "" : reason ?? "",
+    );
+    if (reason === "redirect_uri_mismatch") {
+      todo.push(
+        `Ajoute ${redirect} aux URI de redirection autorisés : Google Cloud → ` +
+          `API et services → Identifiants → ton ID client OAuth → « URI de ` +
+          `redirection autorisés » (pas « Origines JavaScript autorisées »).`,
+      );
+    }
+  } catch (error) {
+    check("client reconnu par Google", false, `appel impossible : ${error.message}`);
+  }
+}
+
+/**
+ * Demande l'écran de consentement sans le suivre, et rend la raison du refus.
+ * `null` si Google accepte l'URI.
+ *
+ * Google ne répond pas en erreur HTTP : il redirige (302) vers sa page
+ * d'erreur, et range le motif réel dans le paramètre `authError`, encodé en
+ * base64. Une version antérieure de ce script ne lisait le corps qu'au-delà de
+ * 400 : elle annonçait « URI déclarée » sur un client où elle ne l'était pas.
+ * Une vérification qui ne sait pas échouer ne vérifie rien.
+ */
+async function probeRedirectUri(clientId, redirect) {
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirect,
@@ -175,32 +212,21 @@ if (!idLooksRight) {
     access_type: "offline",
   });
 
-  try {
-    const response = await fetch(
-      `https://accounts.google.com/o/oauth2/v2/auth?${params}`,
-      { redirect: "manual" },
-    );
-    const body = response.status < 400 ? "" : await response.text();
+  const response = await fetch(
+    `https://accounts.google.com/o/oauth2/v2/auth?${params}`,
+    { redirect: "manual" },
+  );
 
-    const unknownClient = /invalid_client|OAuth client was not found/i.test(body);
-    const badRedirect = /redirect_uri_mismatch/i.test(body);
+  const location = response.headers.get("location") ?? "";
+  const encoded = /[?&]authError=([^&]+)/.exec(location)?.[1];
+  if (!encoded) return null;
 
-    check(
-      "client reconnu par Google",
-      !unknownClient,
-      unknownClient ? "Google ne connaît pas ce Client ID" : "",
-    );
-    check(
-      `URI de redirection déclarée (${redirect})`,
-      !badRedirect,
-      badRedirect ? "à ajouter dans Google Cloud → Identifiants → ton client" : "",
-    );
-    if (badRedirect) {
-      todo.push(`Ajoute ${redirect} aux URI de redirection autorisés.`);
-    }
-  } catch (error) {
-    check("client reconnu par Google", false, `appel impossible : ${error.message}`);
-  }
+  // Le motif est en tête du message, suivi d'une explication localisée dont la
+  // langue dépend du serveur Google qui répond : on ne garde que le motif.
+  const decoded = Buffer.from(decodeURIComponent(encoded), "base64url").toString("utf8");
+  return /(redirect_uri_mismatch|invalid_client|invalid_request|access_denied|org_internal|admin_policy_enforced)/.exec(
+    decoded,
+  )?.[1] ?? "refus non identifié par Google";
 }
 
 // --- Pages publiques exigées par la validation du branding ------------------
