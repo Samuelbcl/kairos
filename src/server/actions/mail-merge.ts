@@ -58,20 +58,30 @@ export async function createMailMerge(
     );
   }
 
-  const [{ data: template }, { data: companies }] = await Promise.all([
-    supabase
-      .from("email_templates")
-      .select("id, name, subject, body")
-      .eq("id", parsed.data.templateId)
-      .eq("workspace_id", workspace.id)
-      .single(),
-    supabase
-      .from("companies")
-      .select("id, name, email, city, sector")
-      .eq("workspace_id", workspace.id)
-      .in("id", parsed.data.companyIds)
-      .is("deleted_at", null),
-  ]);
+  const [{ data: template }, { data: companies }, { data: contacts }] =
+    await Promise.all([
+      supabase
+        .from("email_templates")
+        .select("id, name, subject, body")
+        .eq("id", parsed.data.templateId)
+        .eq("workspace_id", workspace.id)
+        .single(),
+      supabase
+        .from("companies")
+        .select("id, name, email, city, sector")
+        .eq("workspace_id", workspace.id)
+        .in("id", parsed.data.companyIds)
+        .is("deleted_at", null),
+      // Un interlocuteur nomme vaut mieux qu'un « Bonjour » anonyme : on prend
+      // le premier contact connu de chaque entreprise, s'il y en a un.
+      supabase
+        .from("contacts")
+        .select("company_id, first_name, last_name, email, role_title, created_at")
+        .eq("workspace_id", workspace.id)
+        .in("company_id", parsed.data.companyIds)
+        .is("deleted_at", null)
+        .order("created_at"),
+    ]);
 
   if (!template) return fail("Modèle introuvable.");
   if (!companies?.length) return fail("Aucune entreprise sélectionnée.");
@@ -83,6 +93,14 @@ export async function createMailMerge(
     new Date(),
   );
 
+  type Contact = NonNullable<typeof contacts>[number];
+  const contactByCompany = new Map<string, Contact>();
+  for (const contact of contacts ?? []) {
+    if (contact.company_id && !contactByCompany.has(contact.company_id)) {
+      contactByCompany.set(contact.company_id, contact);
+    }
+  }
+
   const report: MergeReport = { created: 0, skipped: [] };
 
   for (const company of companies) {
@@ -91,6 +109,9 @@ export async function createMailMerge(
       continue;
     }
 
+    const contact = contactByCompany.get(company.id);
+    const firstName = contact?.first_name?.trim() ?? "";
+
     const context = {
       company: {
         name: company.name,
@@ -98,6 +119,15 @@ export async function createMailMerge(
         city: company.city ?? "",
         sector: company.sector ?? "",
       },
+      contact: {
+        first_name: firstName,
+        last_name: contact?.last_name ?? "",
+        email: contact?.email ?? "",
+        role_title: contact?.role_title ?? "",
+      },
+      // Salutation prete a l'emploi : nommee quand on connait la personne,
+      // neutre sinon. Evite d'avoir deux modeles selon les cas.
+      salutation: firstName ? `Bonjour ${firstName}` : "Bonjour",
       user: { full_name: fullName },
       today,
     };

@@ -283,6 +283,20 @@ function TemplateEditor({
               </button>
             ))}
           </div>
+
+          <p className="mt-2 text-xs text-muted-foreground">
+            Une variable peut avoir une <strong className="font-medium">valeur de
+            secours</strong>, après une barre verticale : elle sert quand
+            l&apos;information manque.
+          </p>
+          <p className="mt-1 font-mono text-xs text-muted-foreground">
+            Bonjour {"{{contact.first_name|l'équipe}}"},
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            donne « Bonjour Marc, » si le prénom est connu, « Bonjour
+            l&apos;équipe, » sinon. Un seul modèle suffit donc pour tout le
+            monde.
+          </p>
         </div>
       ) : null}
 

@@ -8,6 +8,7 @@
  * pas une copie qui pourrait diverger.
  */
 import { normalizeAppUrl } from "../src/lib/env.ts";
+import { renderTemplate } from "../src/lib/email-variables.ts";
 
 const results = [];
 function expect(label, actual, expected) {
@@ -58,6 +59,57 @@ expect(
 expect("espaces autour", normalizeAppUrl("  https://kairos.vercel.app  "), "https://kairos.vercel.app");
 expect("port conservé", normalizeAppUrl("http://localhost:3001"), "http://localhost:3001");
 expect("valeur illisible", normalizeAppUrl("://"), "http://localhost:3000");
+
+console.log("\nrenderTemplate");
+
+const ctx = {
+  company: { name: "Menuiserie Dupont" },
+  contact: { first_name: "Marc", last_name: "" },
+  salutation: "Bonjour Marc",
+};
+
+expect(
+  "variable simple",
+  renderTemplate("Bonjour {{contact.first_name}}", ctx),
+  "Bonjour Marc",
+);
+expect(
+  "salutation adaptee",
+  renderTemplate("{{salutation}},", ctx),
+  "Bonjour Marc,",
+);
+
+// Le cas qui imposait deux modeles : sans repli, on obtenait « Bonjour , ».
+expect(
+  "valeur de repli sur variable vide",
+  renderTemplate("Bonjour {{contact.last_name|l'equipe}}", ctx),
+  "Bonjour l'equipe",
+);
+expect(
+  "valeur de repli sur variable absente",
+  renderTemplate("Bonjour {{contact.nickname|tout le monde}}", ctx),
+  "Bonjour tout le monde",
+);
+expect(
+  "le repli est ignore quand la valeur existe",
+  renderTemplate("{{company.name|une entreprise}}", ctx),
+  "Menuiserie Dupont",
+);
+expect(
+  "variable inconnue sans repli laisse un vide, jamais le jeton",
+  renderTemplate("[{{inconnue}}]", ctx),
+  "[]",
+);
+expect(
+  "espaces autour du repli ignores",
+  renderTemplate("{{vide|  secours  }}", ctx),
+  "secours",
+);
+expect(
+  "plusieurs variables sur une ligne",
+  renderTemplate("{{salutation}}, ici {{company.name}}.", ctx),
+  "Bonjour Marc, ici Menuiserie Dupont.",
+);
 
 console.warn = warn;
 
