@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { TagBadge } from "./tag-badge";
 import { BulkBar } from "./bulk-bar";
+import type { MergeTemplate } from "./mail-merge-dialog";
 import { formatRelative, fullName } from "@/lib/format";
 
 export type CompanyRow = {
@@ -40,6 +41,8 @@ type Shared = {
   tagColors: Record<string, string>;
   tags: { name: string; color: string }[];
   stages: { id: string; name: string }[];
+  /** Modeles d'e-mail, pour le publipostage depuis la selection. */
+  templates?: MergeTemplate[];
 };
 
 /**
@@ -54,6 +57,7 @@ export function ContactsTable({
   tagColors,
   tags,
   stages,
+  templates = [],
 }: Shared & {
   entity: "company" | "contact";
   companies?: CompanyRow[];
@@ -219,6 +223,7 @@ export function ContactsTable({
 
       {selected.size > 0 ? (
         <BulkBar
+          templates={templates}
           entity={entity}
           ids={[...selected]}
           onClear={() => setSelected(new Set())}

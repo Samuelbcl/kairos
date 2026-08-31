@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { Loader2, Tag, Target, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  MailMergeDialog,
+  type MergeTemplate,
+} from "./mail-merge-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -37,12 +41,15 @@ export function BulkBar({
   onClear,
   tags,
   stages,
+  templates = [],
 }: {
   entity: "company" | "contact";
   ids: string[];
   onClear: () => void;
   tags: { name: string; color: string }[];
   stages: { id: string; name: string }[];
+  /** Modeles d'e-mail de l'espace, pour le publipostage. */
+  templates?: MergeTemplate[];
 }) {
   const [tagInput, setTagInput] = useState("");
   const [stageId, setStageId] = useState(stages[0]?.id ?? "");
@@ -241,6 +248,10 @@ export function BulkBar({
               </div>
             </PopoverContent>
           </Popover>
+        ) : null}
+
+        {entity === "company" ? (
+          <MailMergeDialog companyIds={ids} templates={templates} onDone={onClear} />
         ) : null}
 
         <Button variant="ghost" size="sm" onClick={remove} disabled={pending}>

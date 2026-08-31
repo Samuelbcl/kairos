@@ -281,6 +281,28 @@ try {
     headers: { cookie },
     redirect: "manual",
   });
+  // Le publipostage doit etre propose des qu'un modele existe.
+  await admin.from("email_templates").insert({
+    workspace_id: workspaceId,
+    name: "Prise de contact",
+    subject: "Bonjour {{company.name}}",
+    body: "Bonjour,\n\nJe me permets de vous ecrire.\n\n{{user.full_name}}",
+  });
+
+  const liste = await fetch(`${BASE_URL}/contacts`, {
+    headers: { cookie },
+    redirect: "manual",
+  });
+  const listeBody = await liste.text();
+  // La barre d'actions n'apparait qu'apres selection : on verifie donc que les
+  // modeles parviennent bien au composant client, pas que le bouton est visible.
+  const hasMerge = listeBody.includes("Prise de contact");
+  check(
+    "modeles d'e-mail transmis a la liste",
+    hasMerge,
+    hasMerge ? "" : "le publipostage n'aurait aucun modele a proposer",
+  );
+
   const hasPanel = (await settings.text()).includes("Noms des champs");
   check("panneau de renommage dans les réglages", hasPanel, hasPanel ? "" : "le panneau est absent");
 } catch (error) {

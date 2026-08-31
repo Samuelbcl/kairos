@@ -43,18 +43,25 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
   const supabase = await createClient();
   const pattern = `%${query}%`;
 
-  const [{ data: tagRows }, { data: stages }] = await Promise.all([
-    supabase
-      .from("tags")
-      .select("name, color")
-      .eq("workspace_id", workspace.id)
-      .order("name"),
-    supabase
-      .from("stages")
-      .select("id, name")
-      .eq("workspace_id", workspace.id)
-      .order("position"),
-  ]);
+  const [{ data: tagRows }, { data: stages }, { data: templates }] =
+    await Promise.all([
+      supabase
+        .from("tags")
+        .select("name, color")
+        .eq("workspace_id", workspace.id)
+        .order("name"),
+      supabase
+        .from("stages")
+        .select("id, name")
+        .eq("workspace_id", workspace.id)
+        .order("position"),
+      // Modèles d'e-mail : ils alimentent le publipostage depuis la sélection.
+      supabase
+        .from("email_templates")
+        .select("id, name, subject")
+        .eq("workspace_id", workspace.id)
+        .order("name"),
+    ]);
 
   const tagColors = Object.fromEntries(
     (tagRows ?? []).map((row) => [row.name, row.color]),
@@ -195,6 +202,7 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
           tagColors={tagColors}
           tags={tagRows ?? []}
           stages={stages ?? []}
+          templates={templates ?? []}
         />
       )}
 
